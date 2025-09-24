@@ -13,11 +13,21 @@
         .order-form input, .order-form button { padding: 8px; margin-top: 5px; }
         .order-form button { background-color: #4CAF50; color: white; border: none; cursor: pointer; }
         #confirmation-message { margin-top: 20px; color: green; font-weight: bold; }
+        .user-info { margin-bottom: 20px; }
     </style>
 </head>
 <body>
 
     <h1>商品注文サイト</h1>
+
+    <div class="user-info">
+        <label for="user-name">お名前:</label>
+        <input type="text" id="user-name" placeholder="山田 太郎">
+    </div>
+    <div class="user-info">
+        <label for="user-furigana">フリガナ:</label>
+        <input type="text" id="user-furigana" placeholder="ヤマダ タロウ">
+    </div>
 
     <div class="product-item">
         <div class="product-name">🍎 りんご</div>
