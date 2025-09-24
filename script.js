@@ -9,7 +9,26 @@ const products = {
  * 注文を確定する関数
  */
 function placeOrder() {
-    const orderDetails = {};
+    // ユーザー情報を取得
+    const userName = document.getElementById('user-name').value;
+    const userFurigana = document.getElementById('user-furigana').value;
+    
+    // ユーザー情報が入力されているかチェック
+    if (!userName || !userFurigana) {
+        const confirmationMessage = document.getElementById('confirmation-message');
+        confirmationMessage.textContent = 'お名前とフリガナを入力してください。';
+        confirmationMessage.style.color = 'red';
+        return;
+    }
+
+    const orderDetails = {
+        customerInfo: { // 顧客情報を追加
+            name: userName,
+            furigana: userFurigana
+        },
+        items: {}
+    };
+    
     let totalQuantity = 0;
     let totalPrice = 0;
 
@@ -19,14 +38,14 @@ function placeOrder() {
         const quantity = parseInt(quantityInput.value);
 
         if (quantity > 0) {
-            orderDetails[key] = {
+            orderDetails.items[key] = {
                 name: products[key].name,
                 quantity: quantity,
                 price: products[key].price,
                 subtotal: quantity * products[key].price
             };
             totalQuantity += quantity;
-            totalPrice += orderDetails[key].subtotal;
+            totalPrice += orderDetails.items[key].subtotal;
         }
     }
 
@@ -39,14 +58,14 @@ function placeOrder() {
         return;
     }
 
-    // 注文データの構造を確認
+    // 注文データをFirebaseに送信する準備ができました
     console.log("注文データ:", orderDetails);
     console.log("合計数量:", totalQuantity);
     console.log("合計金額:", totalPrice);
 
-    // TODO: この注文データをFirebaseに送信する処理をここに追加
+    // TODO: Firebaseへのデータ送信処理をここに追加
     // 例: firebase.firestore().collection('orders').add(orderDetails);
 
-    confirmationMessage.textContent = `ご注文ありがとうございます！合計金額は ¥${totalPrice} です。`;
+    confirmationMessage.textContent = `${userName} 様、ご注文ありがとうございます！合計金額は ¥${totalPrice} です。`;
     confirmationMessage.style.color = 'green';
 }
