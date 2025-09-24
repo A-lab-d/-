@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>商品注文サイト</title>
+    <style>
+        body { font-family: sans-serif; max-width: 600px; margin: auto; padding: 20px; }
+        .product-item { border: 1px solid #ccc; padding: 15px; margin-bottom: 15px; border-radius: 8px; }
+        .product-name { font-size: 1.2em; font-weight: bold; }
+        .order-form { margin-top: 20px; }
+        .order-form label { font-weight: bold; }
+        .order-form input, .order-form button { padding: 8px; margin-top: 5px; }
+        .order-form button { background-color: #4CAF50; color: white; border: none; cursor: pointer; }
+        #confirmation-message { margin-top: 20px; color: green; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+    <h1>商品注文サイト</h1>
+
+    <div class="product-item">
+        <div class="product-name">🍎 りんご</div>
+        <div class="product-description">甘くてシャキシャキの美味しいりんごです。</div>
+        <div class="product-price">¥150</div>
+        <div class="order-form">
+            <label for="quantity-apple">数量:</label>
+            <input type="number" id="quantity-apple" value="0" min="0">
+        </div>
+    </div>
+
+    <div class="product-item">
+        <div class="product-name">🍊 みかん</div>
+        <div class="product-description">ジューシーでフレッシュなみかんです。</div>
+        <div class="product-price">¥100</div>
+        <div class="order-form">
+            <label for="quantity-orange">数量:</label>
+            <input type="number" id="quantity-orange" value="0" min="0">
+        </div>
+    </div>
+
+    <div class="product-item">
+        <div class="product-name">🍇 ぶどう</div>
+        <div class="product-description">大粒で甘いぶどうです。</div>
+        <div class="product-price">¥300</div>
+        <div class="order-form">
+            <label for="quantity-grape">数量:</label>
+            <input type="number" id="quantity-grape" value="0" min="0">
+        </div>
+    </div>
+
+    <button onclick="placeOrder()">注文を確定する</button>
+
+    <div id="confirmation-message"></div>
+
+    <script src="script2.js"></script>
+
+</body>
+</html>
