@@ -1,13 +1,12 @@
 // main.js
 
-// firebase-config.js から auth と db をインポート
-// import { auth, db } from "./firebase-config.js";
-// これらはグローバルな変数として扱われるため、インポートは不要
+// firebase-config.jsでグローバル変数として定義された auth と db をそのまま使用
 
 let calendar;
 
 // アプリの機能を初期化する関数
 function initApp() {
+    // authとdbはグローバル変数として使える
     const user = auth.currentUser;
     if (!user) {
         console.error("ユーザーが認証されていません。");
@@ -39,7 +38,8 @@ function initTodoList(uid) {
         document.getElementById('todo-text').value = '';
     });
     
-    db.collection(`users/${uid}/todos').orderBy('createdAt').onSnapshot(snapshot => {
+    // 【修正箇所】: ここで閉じ括弧`)`が不足していました
+    db.collection(`users/${uid}/todos`).orderBy('createdAt').onSnapshot(snapshot => { 
         todoList.innerHTML = '';
         snapshot.forEach(docSnap => {
             const data = docSnap.data();
@@ -142,7 +142,8 @@ document.getElementById('email-form').addEventListener('submit', (e) => {
             initApp();
         })
         .catch(error => {
-            alert("ログインに失敗しました。メールアドレスを確認してください。");
+            // Firebase側でユーザーが見つからない、またはパスワードが違う場合はここでエラーが出る
+            alert("ログインに失敗しました。メールアドレスまたはパスワードが正しくありません。");
             console.error(error);
         });
 });
