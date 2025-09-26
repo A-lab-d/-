@@ -1,8 +1,6 @@
 // firebase-config.js
 
-// import文をすべて削除
-
-// Your web app's Firebase configuration
+// グローバル変数として定義
 const firebaseConfig = {
     apiKey: "AIzaSyD9bHuHOHW6rrSUM5YBq3vLRuh6mAvKja0",
     authDomain: "arailabkarenda.firebaseapp.com",
@@ -16,9 +14,9 @@ const firebaseConfig = {
 // firebase.initializeApp()はグローバルな関数に
 firebase.initializeApp(firebaseConfig);
 
-// グローバルなfirebaseオブジェクトからサービスを取得
-export const auth = firebase.auth();
-export const db = firebase.firestore();
+// グローバル変数として宣言 (exportを削除)
+const auth = firebase.auth();
+const db = firebase.firestore();
 
 // 許可するメールアドレスのリストを定義
 const allowedEmails = ['user1@example.com', 'user2@example.com', 'your_email@example.com'];
