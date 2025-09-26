@@ -22,6 +22,8 @@ function initApp() {
     
     initTodoList(user.uid);
     initCalendar(user.uid);
+    // 【新規追加】: タグ管理機能を初期化
+    initTagManagement(user.uid); 
 
     document.getElementById('logout-button').addEventListener('click', () => {
         auth.signOut();
@@ -90,7 +92,64 @@ function initTodoList(uid) {
     });
 }
 
-// --- カレンダー機能（日付のみに修正） ---
+// --- 担当者タグ管理機能（新規追加） ---
+function initTagManagement(uid) {
+    const tagForm = document.getElementById('tag-form');
+    const tagList = document.getElementById('tag-list');
+    const eventAssigneeSelect = document.getElementById('event-assignee');
+    const tagsCollection = db.collection(`users/${uid}/tags`);
+
+    // タグの追加
+    tagForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const tagName = document.getElementById('new-tag-name').value.trim();
+        if (tagName === '') return;
+
+        await tagsCollection.add({
+            name: tagName,
+            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        document.getElementById('new-tag-name').value = '';
+    });
+
+    // タグのリアルタイム表示とカレンダー選択肢への反映
+    tagsCollection.orderBy('createdAt').onSnapshot(snapshot => {
+        tagList.innerHTML = '';
+        
+        // 【カレンダー選択肢の初期化】: 「全員」オプションを保持
+        const currentOptions = Array.from(eventAssigneeSelect.options);
+        eventAssigneeSelect.innerHTML = '';
+        eventAssigneeSelect.appendChild(currentOptions[0]); // 「全員」を最初に追加
+
+        snapshot.forEach(docSnap => {
+            const tagName = docSnap.data().name;
+
+            // 1. タグ管理リストの更新
+            const li = document.createElement('li');
+            li.innerHTML = `
+                <span>${tagName}</span>
+                <button class="delete-tag-button" data-id="${docSnap.id}">x</button>
+            `;
+            tagList.appendChild(li);
+
+            // 2. カレンダー担当者選択肢の更新
+            const option = document.createElement('option');
+            option.value = tagName;
+            option.textContent = tagName;
+            eventAssigneeSelect.appendChild(option);
+        });
+
+        // タグ削除イベントリスナー
+        tagList.querySelectorAll('.delete-tag-button').forEach(btn => {
+            btn.addEventListener('click', async (e) => {
+                const id = e.target.dataset.id;
+                await tagsCollection.doc(id).delete();
+            });
+        });
+    });
+}
+
+// --- カレンダー機能（担当者欄のデータ送信を修正） ---
 function initCalendar(uid) {
     const calendarEl = document.getElementById('calendar');
     calendar = new FullCalendar.Calendar(calendarEl, {
@@ -101,7 +160,6 @@ function initCalendar(uid) {
             center: 'title',
             right: 'dayGridMonth,timeGridWeek,timeGridDay'
         },
-        // 【修正】: 全日イベント（時刻なし）として扱う
         allDay: true,
         editable: true,
         selectable: true,
@@ -117,13 +175,14 @@ function initCalendar(uid) {
                 const events = [];
                 snapshot.forEach(docSnap => {
                     const data = docSnap.data();
+                    // イベントタイトルに担当者名を追加して表示
+                    const displayTitle = `${data.title} (${data.assignee})`;
                     events.push({
                         id: docSnap.id,
-                        title: data.title,
-                        // 【修正】: toDate()ではなく、Firestoreから取得した日付文字列を直接使用
+                        title: displayTitle,
                         start: data.start, 
                         end: data.end,
-                        allDay: true // 全日イベントとして扱う
+                        allDay: true
                     });
                 });
                 successCallback(events);
@@ -137,15 +196,14 @@ function initCalendar(uid) {
     eventForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         const title = document.getElementById('event-title').value;
+        const assignee = document.getElementById('event-assignee').value; // 【追加】担当者名を取得
         
-        // 【修正】: 日付入力のIDを使用
         const startInput = document.getElementById('event-start-date').value;
-        const endInput = document.getElementById('event-end-date').value; // 終了日は含まれない日として登録するため
+        const endInput = document.getElementById('event-end-date').value;
         
-        // 終了日はFullCalendarの仕様に合わせ、入力された日付の翌日を終了日とする
         const endDate = new Date(endInput);
-        endDate.setDate(endDate.getDate() + 1); // 翌日に設定
-        const endDay = endDate.toISOString().split('T')[0]; // YYYY-MM-DD 形式に戻す
+        endDate.setDate(endDate.getDate() + 1);
+        const endDay = endDate.toISOString().split('T')[0];
 
         if (title.trim() === '' || !startInput || !endInput || startInput >= endInput) {
             alert('入力内容を確認してください。');
@@ -154,9 +212,9 @@ function initCalendar(uid) {
         
         await db.collection(`users/${uid}/events`).add({
             title: title,
-            // 【修正】: YYYY-MM-DD形式の文字列をそのまま保存
+            assignee: assignee, // 【追加】担当者名を保存
             start: startInput, 
-            end: endDay, // FullCalendarは終了日を含まない仕様
+            end: endDay,
             allDay: true
         });
         
@@ -164,6 +222,7 @@ function initCalendar(uid) {
         document.getElementById('event-title').value = '';
         document.getElementById('event-start-date').value = '';
         document.getElementById('event-end-date').value = '';
+        document.getElementById('event-assignee').value = '全員'; // デフォルトに戻す
         
         calendar.refetchEvents();
     });
