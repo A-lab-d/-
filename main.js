@@ -22,7 +22,6 @@ function initApp() {
     
     initTodoList(user.uid);
     initCalendar(user.uid);
-    // 【修正】: initTagManagement の呼び出しを削除 (main.js:26 のエラー解消)
     initAssigneeUI(); 
 
     document.getElementById('logout-button').addEventListener('click', () => {
@@ -30,24 +29,34 @@ function initApp() {
     });
 }
 
-// --- To Doリスト機能（変更なし） ---
+// --- To Doリスト機能（タイトルと内容に対応するよう修正） ---
 function initTodoList(uid) {
     const todoForm = document.getElementById('todo-form');
     const todoList = document.getElementById('todo-list');
 
+    // 1. タスク追加処理の修正
     todoForm.addEventListener('submit', async (e) => {
         e.preventDefault();
-        const text = document.getElementById('todo-text').value;
-        if (text.trim() === '') return;
+        const title = document.getElementById('todo-title').value;
+        const description = document.getElementById('todo-description').value;
+
+        if (title.trim() === '') {
+            alert('タスクのタイトルは必須です。');
+            return;
+        }
+
         await db.collection(`users/${uid}/todos`).add({
-            text: text,
+            title: title, // タイトルを保存
+            description: description, // 内容を保存
             status: INITIAL_STATUS,
             statusOrder: STATUS_ORDER_MAP[INITIAL_STATUS],
             createdAt: firebase.firestore.FieldValue.serverTimestamp()
         });
-        document.getElementById('todo-text').value = '';
+        document.getElementById('todo-title').value = '';
+        document.getElementById('todo-description').value = '';
     });
     
+    // 2. タスク一覧のリアルタイム表示とイベントリスナーの設定
     db.collection(`users/${uid}/todos`)
         .orderBy('statusOrder')
         .orderBy('createdAt')
@@ -57,14 +66,25 @@ function initTodoList(uid) {
         snapshot.forEach(docSnap => {
             const data = docSnap.data();
             const li = document.createElement('li');
+            li.setAttribute('data-id', docSnap.id); // liにIDを設定
+            
+            // 【修正】タイトルと内容を表示する新しい構造
             li.innerHTML = `
-                <span>${data.text}</span>
-                <span class="todo-status status-${data.status}" data-id="${docSnap.id}" data-status="${data.status}">${data.status}</span>
-                <button class="delete-button" data-id="${docSnap.id}">x</button>
+                <div class="todo-content">
+                    <span class="todo-title">${data.title}</span>
+                    <span class="todo-description editable" data-id="${docSnap.id}">
+                        ${data.description || '内容なし (クリックで編集)'}
+                    </span>
+                </div>
+                <div class="todo-actions">
+                    <span class="todo-status status-${data.status}" data-id="${docSnap.id}" data-status="${data.status}">${data.status}</span>
+                    <button class="delete-button" data-id="${docSnap.id}">x</button>
+                </div>
             `;
             todoList.appendChild(li);
         });
         
+        // 3. ステータス変更イベント
         todoList.querySelectorAll('.todo-status').forEach(btn => {
             btn.addEventListener('click', async (e) => {
                 const id = e.target.dataset.id;
@@ -83,10 +103,53 @@ function initTodoList(uid) {
             });
         });
         
+        // 4. 削除イベント
         todoList.querySelectorAll('.delete-button').forEach(btn => {
             btn.addEventListener('click', async (e) => {
                 const id = e.target.dataset.id;
                 await db.collection(`users/${uid}/todos`).doc(id).delete();
+            });
+        });
+        
+        // 5. 【新規追加】内容のインライン編集イベント
+        todoList.querySelectorAll('.todo-description.editable').forEach(span => {
+            span.addEventListener('click', function() {
+                const currentText = this.textContent.trim() === '内容なし (クリックで編集)' ? '' : this.textContent.trim();
+                const taskId = this.dataset.id;
+                
+                // テキストエリアを作成
+                const input = document.createElement('textarea');
+                input.value = currentText;
+                input.rows = 3; 
+                input.className = 'description-editor';
+
+                // 編集中は表示を置き換える
+                this.style.display = 'none';
+                this.parentNode.appendChild(input); 
+                input.focus();
+
+                // 編集完了時の処理
+                const saveChanges = async () => {
+                    const newDescription = input.value.trim();
+                    await db.collection(`users/${uid}/todos`).doc(taskId).update({
+                        description: newDescription
+                    });
+                    
+                    // 元の表示に戻す
+                    input.remove();
+                    this.style.display = 'block';
+                };
+
+                // フォーカスが外れたら保存 (Blur)
+                input.addEventListener('blur', saveChanges);
+                
+                // Enterキー (Shift+Enterで改行可能) でも保存
+                input.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        saveChanges();
+                    }
+                });
             });
         });
     });
@@ -109,7 +172,7 @@ function initAssigneeUI() {
     });
 }
 
-// --- カレンダー機能 ---
+// --- カレンダー機能（変更なし） ---
 function initCalendar(uid) {
     const calendarEl = document.getElementById('calendar');
     calendar = new FullCalendar.Calendar(calendarEl, {
@@ -120,7 +183,6 @@ function initCalendar(uid) {
             center: 'title',
             right: 'dayGridMonth,timeGridWeek,timeGridDay'
         },
-        // 【修正】: allDay: true は不要なオプションのため削除
         editable: true,
         selectable: true,
         eventClick: async (info) => {
@@ -149,7 +211,7 @@ function initCalendar(uid) {
                         title: displayTitle,
                         start: data.start, 
                         end: data.end,
-                        allDay: true // イベントデータとして全日を設定
+                        allDay: true
                     });
                 });
                 successCallback(events);
@@ -202,7 +264,7 @@ function initCalendar(uid) {
             assignee: finalAssignee,
             start: startInput, 
             end: endDay,
-            allDay: true // データベースには全日イベントとして保存
+            allDay: true
         });
         
         // フォームをクリア
