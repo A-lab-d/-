@@ -12,31 +12,14 @@ const STATUS_ORDER_MAP = {
 };
 const INITIAL_STATUS = '検討中';
 
-// --- ユーティリティ関数: 10分刻みの時刻オプションを生成 ---
-function generateTimeOptions(selectElement) {
-    let html = '';
-    for (let h = 0; h < 24; h++) {
-        for (let m = 0; m < 60; m += 10) { // 10分刻み
-            const hour = String(h).padStart(2, '0');
-            const minute = String(m).padStart(2, '0');
-            const timeValue = `${hour}:${minute}`;
-            html += `<option value="${timeValue}">${timeValue}</option>`;
-        }
-    }
-    selectElement.innerHTML = html;
-}
-
 // アプリの機能を初期化する関数
 function initApp() {
+    // authとdbはグローバル変数として使える
     const user = auth.currentUser;
     if (!user) {
         console.error("ユーザーが認証されていません。");
         return;
     }
-
-    // 【修正】時刻オプションの生成を初期化時に実行
-    generateTimeOptions(document.getElementById('event-start-time'));
-    generateTimeOptions(document.getElementById('event-end-time'));
 
     initTodoList(user.uid);
     initCalendar(user.uid);
@@ -46,7 +29,7 @@ function initApp() {
     });
 }
 
-// --- To Doリスト機能 (変更なし) ---
+// --- To Doリスト機能（変更なし） ---
 function initTodoList(uid) {
     const todoForm = document.getElementById('todo-form');
     const todoList = document.getElementById('todo-list');
@@ -57,16 +40,16 @@ function initTodoList(uid) {
         if (text.trim() === '') return;
         await db.collection(`users/${uid}/todos`).add({
             text: text,
-            status: INITIAL_STATUS,
-            statusOrder: STATUS_ORDER_MAP[INITIAL_STATUS],
+            status: INITIAL_STATUS, 
+            statusOrder: STATUS_ORDER_MAP[INITIAL_STATUS], 
             createdAt: firebase.firestore.FieldValue.serverTimestamp()
         });
         document.getElementById('todo-text').value = '';
     });
     
     db.collection(`users/${uid}/todos`)
-        .orderBy('statusOrder')
-        .orderBy('createdAt')
+        .orderBy('statusOrder') 
+        .orderBy('createdAt') 
         .onSnapshot(snapshot => { 
         
         todoList.innerHTML = '';
@@ -147,44 +130,43 @@ function initCalendar(uid) {
         }
     });
     calendar.render();
-    
     const eventForm = document.getElementById('event-form');
     eventForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         const title = document.getElementById('event-title').value;
         
-        // 【修正箇所】: 日付と時間を分離して取得
-        const startDate = document.getElementById('event-start-date').value;
-        const startTime = document.getElementById('event-start-time').value;
-        const endDate = document.getElementById('event-end-date').value;
-        const endTime = document.getElementById('event-end-time').value;
+        // 【修正箇所】: 4つのフィールドから値を取得し、結合してDateオブジェクトを作成
+        const startDatePart = document.getElementById('event-start-date-part').value;
+        const startTimePart = document.getElementById('event-start-time-part').value;
+        const endDatePart = document.getElementById('event-end-date-part').value;
+        const endTimePart = document.getElementById('event-end-time-part').value;
 
-        // 日付と時間を結合してDateオブジェクトを作成
-        const start = new Date(`${startDate}T${startTime}:00`);
-        const end = new Date(`${endDate}T${endTime}:00`);
+        // 日付と時間を結合してISO 8601形式の文字列を作成し、Dateオブジェクトに変換
+        const start = new Date(`${startDatePart}T${startTimePart}:00`);
+        const end = new Date(`${endDatePart}T${endTimePart}:00`);
 
-        if (title.trim() === '' || !startDate || !startTime || !endDate || !endTime || start >= end) {
+        if (title.trim() === '' || !start || !end || start >= end) {
             alert('入力内容を確認してください。');
             return;
         }
-
         await db.collection(`users/${uid}/events`).add({
             title: title,
             start: firebase.firestore.Timestamp.fromDate(start),
             end: firebase.firestore.Timestamp.fromDate(end)
         });
-
+        
+        // フォームをクリア (日付と時間の各パーツをクリア)
         document.getElementById('event-title').value = '';
-        // フォームをリセット（日付と時間入力はそのまま）
-        // document.getElementById('event-start-date').value = '';
-        // document.getElementById('event-start-time').value = '';
-        // document.getElementById('event-end-date').value = '';
-        // document.getElementById('event-end-time').value = '';
+        document.getElementById('event-start-date-part').value = '';
+        document.getElementById('event-start-time-part').value = '';
+        document.getElementById('event-end-date-part').value = '';
+        document.getElementById('event-end-time-part').value = '';
+
         calendar.refetchEvents();
     });
 }
 
-// --- 認証ロジック (変更なし) ---
+// --- 認証ロジック（変更なし） ---
 document.getElementById('email-form').addEventListener('submit', (e) => {
     e.preventDefault();
     const email = document.getElementById('email').value;
