@@ -23,6 +23,7 @@ function initApp() {
     initTodoList(user.uid);
     initCalendar(user.uid);
     initAssigneeUI(); 
+    initDateInputUI();
 
     document.getElementById('logout-button').addEventListener('click', () => {
         auth.signOut();
@@ -34,7 +35,6 @@ function initTodoList(uid) {
     const todoForm = document.getElementById('todo-form');
     const todoList = document.getElementById('todo-list');
 
-    // 1. タスク追加処理の修正
     todoForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         const title = document.getElementById('todo-title').value;
@@ -46,8 +46,8 @@ function initTodoList(uid) {
         }
 
         await db.collection(`users/${uid}/todos`).add({
-            title: title, // タイトルを保存
-            description: description, // 内容を保存
+            title: title,
+            description: description,
             status: INITIAL_STATUS,
             statusOrder: STATUS_ORDER_MAP[INITIAL_STATUS],
             createdAt: firebase.firestore.FieldValue.serverTimestamp()
@@ -56,7 +56,6 @@ function initTodoList(uid) {
         document.getElementById('todo-description').value = '';
     });
     
-    // 2. タスク一覧のリアルタイム表示とイベントリスナーの設定
     db.collection(`users/${uid}/todos`)
         .orderBy('statusOrder')
         .orderBy('createdAt')
@@ -66,9 +65,8 @@ function initTodoList(uid) {
         snapshot.forEach(docSnap => {
             const data = docSnap.data();
             const li = document.createElement('li');
-            li.setAttribute('data-id', docSnap.id); // liにIDを設定
+            li.setAttribute('data-id', docSnap.id);
             
-            // 【修正】タイトルと内容を表示する新しい構造
             li.innerHTML = `
                 <div class="todo-content">
                     <span class="todo-title">${data.title}</span>
@@ -84,7 +82,6 @@ function initTodoList(uid) {
             todoList.appendChild(li);
         });
         
-        // 3. ステータス変更イベント
         todoList.querySelectorAll('.todo-status').forEach(btn => {
             btn.addEventListener('click', async (e) => {
                 const id = e.target.dataset.id;
@@ -103,7 +100,6 @@ function initTodoList(uid) {
             });
         });
         
-        // 4. 削除イベント
         todoList.querySelectorAll('.delete-button').forEach(btn => {
             btn.addEventListener('click', async (e) => {
                 const id = e.target.dataset.id;
@@ -111,39 +107,32 @@ function initTodoList(uid) {
             });
         });
         
-        // 5. 【新規追加】内容のインライン編集イベント
         todoList.querySelectorAll('.todo-description.editable').forEach(span => {
             span.addEventListener('click', function() {
                 const currentText = this.textContent.trim() === '内容なし (クリックで編集)' ? '' : this.textContent.trim();
                 const taskId = this.dataset.id;
                 
-                // テキストエリアを作成
                 const input = document.createElement('textarea');
                 input.value = currentText;
                 input.rows = 3; 
                 input.className = 'description-editor';
 
-                // 編集中は表示を置き換える
                 this.style.display = 'none';
                 this.parentNode.appendChild(input); 
                 input.focus();
 
-                // 編集完了時の処理
                 const saveChanges = async () => {
                     const newDescription = input.value.trim();
                     await db.collection(`users/${uid}/todos`).doc(taskId).update({
                         description: newDescription
                     });
                     
-                    // 元の表示に戻す
                     input.remove();
                     this.style.display = 'block';
                 };
 
-                // フォーカスが外れたら保存 (Blur)
                 input.addEventListener('blur', saveChanges);
                 
-                // Enterキー (Shift+Enterで改行可能) でも保存
                 input.addEventListener('keydown', (e) => {
                     if (e.key === 'Enter' && !e.shiftKey) {
                         e.preventDefault();
@@ -160,11 +149,10 @@ function initAssigneeUI() {
     const individualAssigneesDiv = document.getElementById('individual-assignees');
     const assigneeRadios = document.getElementsByName('assigneeType');
     
-    // ラジオボタンの変更を監視し、個人入力欄の表示/非表示を切り替える
     assigneeRadios.forEach(radio => {
         radio.addEventListener('change', (e) => {
             if (e.target.value === '個人') {
-                individualAssigneesDiv.style.display = 'grid'; // CSS Gridで表示
+                individualAssigneesDiv.style.display = 'grid';
             } else {
                 individualAssigneesDiv.style.display = 'none';
             }
@@ -172,7 +160,38 @@ function initAssigneeUI() {
     });
 }
 
-// --- カレンダー機能（1日のみの予定を許可するよう修正） ---
+// --- 日付入力UIロジック（変更なし） ---
+function initDateInputUI() {
+    const singleInputDiv = document.getElementById('single-date-input');
+    const rangeInputDiv = document.getElementById('range-date-input');
+    const dateRadios = document.getElementsByName('dateType');
+    
+    dateRadios.forEach(radio => {
+        radio.addEventListener('change', (e) => {
+            if (e.target.value === 'range') {
+                singleInputDiv.style.display = 'none';
+                rangeInputDiv.style.display = 'grid';
+                
+                document.getElementById('event-date').removeAttribute('required');
+                document.getElementById('event-start-date').setAttribute('required', 'required');
+                document.getElementById('event-end-date').setAttribute('required', 'required');
+            } else {
+                singleInputDiv.style.display = 'grid';
+                rangeInputDiv.style.display = 'none';
+                
+                document.getElementById('event-date').setAttribute('required', 'required');
+                document.getElementById('event-start-date').removeAttribute('required');
+                document.getElementById('event-end-date').removeAttribute('required');
+            }
+        });
+    });
+    
+    document.getElementById('event-date').setAttribute('required', 'required');
+    document.getElementById('event-start-date').removeAttribute('required');
+    document.getElementById('event-end-date').removeAttribute('required');
+}
+
+// --- カレンダー機能（ロジック大幅修正） ---
 function initCalendar(uid) {
     const calendarEl = document.getElementById('calendar');
     calendar = new FullCalendar.Calendar(calendarEl, {
@@ -185,12 +204,12 @@ function initCalendar(uid) {
         },
         editable: true,
         selectable: true,
+        
+        // 【修正】eventClick: 削除確認から詳細表示に変更
         eventClick: async (info) => {
-            if (confirm(`「${info.event.title}」を削除しますか？`)) {
-                await db.collection(`users/${uid}/events`).doc(info.event.id).delete();
-                calendar.refetchEvents();
-            }
+            showEventDetail(uid, info.event);
         },
+        
         events: async (fetchInfo, successCallback, failureCallback) => {
             try {
                 const snapshot = await db.collection(`users/${uid}/events`).get();
@@ -221,11 +240,14 @@ function initCalendar(uid) {
         }
     });
     calendar.render();
+    
     const eventForm = document.getElementById('event-form');
     eventForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         const title = document.getElementById('event-title').value;
+        const description = document.getElementById('event-description').value; // 【追加】内容を取得
         const assigneeType = document.querySelector('input[name="assigneeType"]:checked').value;
+        const dateType = document.querySelector('input[name="dateType"]:checked').value;
         
         let finalAssignee;
         
@@ -247,54 +269,231 @@ function initCalendar(uid) {
             finalAssignee = individualNames;
         }
 
-        const startInput = document.getElementById('event-start-date').value;
-        const endInput = document.getElementById('event-end-date').value;
-        
-        // 【修正1】: バリデーションを修正。開始日と終了日が入力されているか、開始日が終了日よりも前または同じであるかをチェック。
-        if (title.trim() === '' || !startInput || !endInput) {
-            alert('タイトルと日付を入力してください。');
-            return;
+        let startDate, endDate;
+
+        if (dateType === 'single') {
+            startDate = document.getElementById('event-date').value;
+            
+            if (!startDate) {
+                alert('日付を入力してください。');
+                return;
+            }
+            
+            const endDateObj = new Date(startDate);
+            endDateObj.setDate(endDateObj.getDate() + 1);
+            endDate = endDateObj.toISOString().split('T')[0];
+            
+        } else { // range
+            startDate = document.getElementById('event-start-date').value;
+            endDate = document.getElementById('event-end-date').value;
+            
+            if (!startDate || !endDate) {
+                alert('開始日と終了日を入力してください。');
+                return;
+            }
+            
+            if (startDate > endDate) {
+                alert('開始日は終了日よりも後の日付に設定できません。');
+                return;
+            }
+            
+            const endDateObj = new Date(endDate);
+            endDateObj.setDate(endDateObj.getDate() + 1);
+            endDate = endDateObj.toISOString().split('T')[0];
         }
 
-        if (startInput > endInput) {
-            alert('開始日は終了日よりも後の日付に設定できません。');
+
+        if (title.trim() === '') {
+            alert('タイトルを入力してください。');
             return;
         }
-        
-        // 【修正2】: FullCalendarの仕様（終了日を含まない）に合わせて、終了日が開始日と同じ場合は、終了日を翌日に設定するロジックを再確認し、そのまま維持。
-
-        const endDate = new Date(endInput);
-        // 終了日の日付オブジェクトを作成し、FullCalendarの仕様に合わせて1日加算
-        endDate.setDate(endDate.getDate() + 1);
-        const endDay = endDate.toISOString().split('T')[0];
-
-        // FullCalendarの仕様により、開始日と終了日が同じ日であっても
-        // (例: 2025-09-26 to 2025-09-26)
-        // データベースには終了日として翌日 (2025-09-27) が保存され、
-        // カレンダー上では正しく1日のみの予定として表示されます。
         
         await db.collection(`users/${uid}/events`).add({
             title: title,
+            description: description, // 【追加】内容を保存
             assignee: finalAssignee,
-            start: startInput, 
-            end: endDay, // 終了日（FullCalendarの仕様に合わせて翌日）を保存
+            start: startDate, 
+            end: endDate,
             allDay: true
         });
         
         // フォームをクリア
         document.getElementById('event-title').value = '';
+        document.getElementById('event-description').value = ''; // 【追加】内容フィールドをクリア
+        document.getElementById('event-date').value = '';
         document.getElementById('event-start-date').value = '';
         document.getElementById('event-end-date').value = '';
         document.getElementById('assignee-all').checked = true;
+        document.getElementById('date-single').checked = true;
         document.getElementById('individual-assignees').style.display = 'none';
+        document.getElementById('range-date-input').style.display = 'none';
+        document.getElementById('single-date-input').style.display = 'grid';
         document.getElementById('assignee-1').value = '';
         document.getElementById('assignee-2').value = '';
         document.getElementById('assignee-3').value = '';
         document.getElementById('assignee-4').value = '';
         
+        document.getElementById('event-date').setAttribute('required', 'required');
+        document.getElementById('event-start-date').removeAttribute('required');
+        document.getElementById('event-end-date').removeAttribute('required');
+
         calendar.refetchEvents();
     });
 }
+
+// --- 【新規追加】イベント詳細表示/編集関数 ---
+function showEventDetail(uid, event) {
+    const modal = document.getElementById('event-detail-modal');
+    const closeButton = modal.querySelector('.close-button');
+    const deleteButton = document.getElementById('detail-delete-button');
+    const saveButton = document.getElementById('detail-save-button');
+    const assigneesDiv = document.getElementById('detail-individual-assignees');
+    const assigneeRadios = document.getElementsByName('detailAssigneeType');
+    
+    // 担当者タイプ変更イベント（UI表示切替）を先に設定
+    assigneeRadios.forEach(radio => {
+        radio.onchange = (e) => {
+            if (e.target.value === '個人') {
+                assigneesDiv.style.display = 'grid';
+            } else {
+                assigneesDiv.style.display = 'none';
+            }
+        };
+    });
+    
+    // イベントIDを保存
+    document.getElementById('detail-event-id').value = event.id;
+
+    // Firestoreから最新のデータを取得
+    db.collection(`users/${uid}/events`).doc(event.id).get().then(doc => {
+        if (!doc.exists) {
+            alert('予定が見つかりませんでした。');
+            modal.style.display = 'none';
+            return;
+        }
+        const data = doc.data();
+        
+        // タイトルと内容を設定
+        document.getElementById('detail-title').value = data.title;
+        document.getElementById('detail-description').value = data.description || '';
+
+        // 日付範囲を設定 (FullCalendarはendを+1日しているので、表示用に-1日する)
+        const displayEndDate = new Date(data.end);
+        displayEndDate.setDate(displayEndDate.getDate() - 1);
+        const startString = data.start;
+        const endString = displayEndDate.toISOString().split('T')[0];
+        
+        let dateRangeText;
+        if (startString === endString) {
+            dateRangeText = `${startString} (単日)`;
+        } else {
+            dateRangeText = `${startString} から ${endString}`;
+        }
+        document.getElementById('detail-date-range').textContent = dateRangeText;
+
+
+        // 担当者情報を設定
+        const assigneeTypeAll = document.getElementById('detail-assignee-all');
+        const assigneeTypeIndividual = document.getElementById('detail-assignee-individual');
+        
+        // 担当者入力フィールドをクリア
+        for (let i = 1; i <= 4; i++) {
+            document.getElementById(`detail-assignee-${i}`).value = '';
+        }
+        
+        if (data.assignee === '全員') {
+            assigneeTypeAll.checked = true;
+            assigneesDiv.style.display = 'none';
+        } else {
+            assigneeTypeIndividual.checked = true;
+            assigneesDiv.style.display = 'grid';
+            
+            // 担当者名をフィールドに設定
+            if (Array.isArray(data.assignee)) {
+                data.assignee.forEach((name, index) => {
+                    if (index < 4) {
+                        document.getElementById(`detail-assignee-${index + 1}`).value = name;
+                    }
+                });
+            }
+        }
+        
+        // モーダルを表示
+        modal.style.display = 'block';
+    }).catch(error => {
+        console.error("予定データの取得エラー:", error);
+        alert("予定の詳細を取得できませんでした。");
+    });
+
+
+    // --- モーダル内のイベントリスナー（毎回再設定しないよう、ここでは関数として定義して上書き） ---
+
+    // 閉じるボタン
+    closeButton.onclick = () => {
+        modal.style.display = 'none';
+    };
+
+    // モーダルの外側をクリック
+    window.onclick = (event) => {
+        if (event.target === modal) {
+            modal.style.display = 'none';
+        }
+    };
+    
+    // 削除ボタン
+    deleteButton.onclick = async () => {
+        if (confirm('この予定を本当に削除しますか？')) {
+            const id = document.getElementById('detail-event-id').value;
+            await db.collection(`users/${uid}/events`).doc(id).delete();
+            modal.style.display = 'none';
+            calendar.refetchEvents(); // カレンダーを更新
+        }
+    };
+    
+    // 保存ボタン
+    saveButton.onclick = async () => {
+        const id = document.getElementById('detail-event-id').value;
+        const newTitle = document.getElementById('detail-title').value;
+        const newDescription = document.getElementById('detail-description').value;
+        const newAssigneeType = document.querySelector('input[name="detailAssigneeType"]:checked').value;
+        
+        let newFinalAssignee;
+        
+        if (newAssigneeType === '全員') {
+            newFinalAssignee = '全員';
+        } else {
+            const individualNames = [];
+            for (let i = 1; i <= 4; i++) {
+                const name = document.getElementById(`detail-assignee-${i}`).value.trim();
+                if (name) {
+                    individualNames.push(name);
+                }
+            }
+            
+            if (individualNames.length === 0) {
+                alert('個人を担当者にする場合、担当者は少なくとも1人入力してください。');
+                return;
+            }
+            newFinalAssignee = individualNames;
+        }
+        
+        if (newTitle.trim() === '') {
+            alert('タイトルは必須です。');
+            return;
+        }
+
+        await db.collection(`users/${uid}/events`).doc(id).update({
+            title: newTitle,
+            description: newDescription,
+            assignee: newFinalAssignee
+        });
+        
+        alert('予定が更新されました。');
+        modal.style.display = 'none';
+        calendar.refetchEvents(); // カレンダーを更新
+    };
+}
+
 
 // --- 認証ロジック（変更なし） ---
 document.getElementById('email-form').addEventListener('submit', (e) => {
@@ -304,6 +503,8 @@ document.getElementById('email-form').addEventListener('submit', (e) => {
     auth.signInWithEmailAndPassword(email, fixedPassword)
         .then((userCredential) => {
             console.log("ログイン成功:", userCredential.user.email);
+            document.getElementById('auth-container').style.display = 'none';
+            document.getElementById('app-container').style.display = 'block';
             initApp();
         })
         .catch(error => {
@@ -315,6 +516,11 @@ document.getElementById('email-form').addEventListener('submit', (e) => {
 // ページ読み込み時に認証状態をチェックし、ログイン済みならinitAppを呼び出す
 auth.onAuthStateChanged(user => {
     if (user) {
+        document.getElementById('auth-container').style.display = 'none';
+        document.getElementById('app-container').style.display = 'block';
         initApp();
+    } else {
+        document.getElementById('auth-container').style.display = 'block';
+        document.getElementById('app-container').style.display = 'none';
     }
 });
