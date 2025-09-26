@@ -6,7 +6,7 @@ body {
 }
 
 #auth-container, #app-container {
-    max-width: 1200px; /* 横並びにするため、最大幅を広げます */
+    max-width: 1200px; /* PC/タブレット表示時の最大幅 */
     margin: 0 auto;
     background: #fff;
     padding: 20px;
@@ -32,7 +32,7 @@ header {
     cursor: pointer;
 }
 
-/* --- レイアウト変更の主要な修正 --- */
+/* --- PC/タブレット (横並び) の設定 --- */
 main {
     display: flex; /* Flexboxを有効化 */
     gap: 20px;     /* セクション間の間隔を設定 */
@@ -113,4 +113,30 @@ main {
     color: #f44336;
     cursor: pointer;
     font-size: 1.2em;
+}
+
+/* --- レスポンシブ対応 (スマートフォン表示時の修正) --- */
+/* 画面幅が800px以下の場合に適用 */
+@media (max-width: 800px) {
+    
+    /* アプリの最大幅を画面幅に合わせ、中央寄せを調整 */
+    #auth-container, #app-container {
+        max-width: 100%;
+        margin: 0 10px; /* 左右に少し余白を持たせる */
+        padding: 10px;
+    }
+
+    /* mainセクションを縦並び（column）に変更 */
+    main {
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    /* 各セクションが横幅いっぱいに広がるようにする */
+    .calendar-section, .todo-section {
+        flex: none; /* Flexの比率を解除 */
+        width: auto; /* width: 100% と同じ効果 (paddingと合わせるためauto) */
+        min-width: unset; /* 最小幅の制限を解除 */
+        padding: 15px;
+    }
 }
