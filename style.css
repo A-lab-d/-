@@ -1,0 +1,105 @@
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 20px;
+    background-color: #f4f4f4;
+}
+
+#auth-container, #app-container {
+    max-width: 800px;
+    margin: 0 auto;
+    background: #fff;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #ccc;
+    padding-bottom: 10px;
+    margin-bottom: 20px;
+}
+
+#logout-button {
+    padding: 8px 16px;
+    background-color: #f44336;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+main {
+    display: grid;
+    gap: 20px;
+}
+
+.calendar-section, .todo-section {
+    padding: 20px;
+    border-radius: 8px;
+    background-color: #fafafa;
+}
+
+.fc-toolbar-title {
+    font-size: 1.5em !important;
+}
+
+.fc-daygrid-event {
+    white-space: normal;
+    background-color: #4285F4;
+    border: none;
+    padding: 2px 4px;
+}
+
+.form-container {
+    margin-top: 20px;
+}
+
+.form-container h3 {
+    margin-top: 0;
+}
+
+.form-container input, .form-container button {
+    width: 100%;
+    padding: 8px;
+    margin-bottom: 10px;
+    box-sizing: border-box;
+}
+
+#todo-list {
+    list-style: none;
+    padding: 0;
+}
+
+#todo-list li {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #eef;
+    padding: 10px;
+    margin-bottom: 5px;
+    border-radius: 4px;
+}
+
+.todo-status {
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 0.8em;
+    cursor: pointer;
+    color: white;
+}
+
+.status-検討中 { background-color: #ffc107; }
+.status-実行中 { background-color: #2196f3; }
+.status-達成 { background-color: #4caf50; }
+
+.delete-button {
+    background: none;
+    border: none;
+    color: #f44336;
+    cursor: pointer;
+    font-size: 1.2em;
+}
