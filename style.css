@@ -6,7 +6,7 @@ body {
 }
 
 #auth-container, #app-container {
-    max-width: 800px;
+    max-width: 1200px; /* 横並びにするため、最大幅を広げます */
     margin: 0 auto;
     background: #fff;
     padding: 20px;
@@ -32,16 +32,27 @@ header {
     cursor: pointer;
 }
 
+/* --- レイアウト変更の主要な修正 --- */
 main {
-    display: grid;
-    gap: 20px;
+    display: flex; /* Flexboxを有効化 */
+    gap: 20px;     /* セクション間の間隔を設定 */
 }
 
-.calendar-section, .todo-section {
+.calendar-section {
+    flex: 2; /* カレンダーセクションに多めのスペース（2/3程度）を割り当て */
+    min-width: 550px; /* カレンダー表示のための最小幅を確保 */
     padding: 20px;
     border-radius: 8px;
     background-color: #fafafa;
 }
+
+.todo-section {
+    flex: 1; /* To Doリストセクションに少なめのスペース（1/3程度）を割り当て */
+    padding: 20px;
+    border-radius: 8px;
+    background-color: #fafafa;
+}
+/* ------------------------------------- */
 
 .fc-toolbar-title {
     font-size: 1.5em !important;
