@@ -14,15 +14,13 @@ const INITIAL_STATUS = '検討中';
 
 // アプリの機能を初期化する関数
 function initApp() {
-    // authとdbはグローバル変数として使える
     const user = auth.currentUser;
     if (!user) {
         console.error("ユーザーが認証されていません。");
         return;
     }
     
-    // エラーの原因となった、不要なカスタム時間生成ロジックを削除したため、
-    // ここで initTodoList と initCalendar が実行されるようになります。
+    // 不要なカスタム時間生成ロジックを削除したため、これで正常に動作する
     initTodoList(user.uid);
     initCalendar(user.uid);
 
@@ -93,7 +91,7 @@ function initTodoList(uid) {
     });
 }
 
-// --- カレンダー機能（修正に伴いIDを元に戻す） ---
+// --- カレンダー機能 ---
 function initCalendar(uid) {
     const calendarEl = document.getElementById('calendar');
     calendar = new FullCalendar.Calendar(calendarEl, {
@@ -137,7 +135,7 @@ function initCalendar(uid) {
         e.preventDefault();
         const title = document.getElementById('event-title').value;
         
-        // 【修正箇所】: datetime-localのIDに戻す
+        // datetime-local の IDに戻す
         const startInput = document.getElementById('event-start-date').value;
         const endInput = document.getElementById('event-end-date').value;
 
@@ -155,7 +153,7 @@ function initCalendar(uid) {
             end: firebase.firestore.Timestamp.fromDate(end)
         });
         
-        // フォームをクリア (datetime-localのIDに戻す)
+        // フォームをクリア
         document.getElementById('event-title').value = '';
         document.getElementById('event-start-date').value = '';
         document.getElementById('event-end-date').value = '';
