@@ -33,12 +33,12 @@
                     <form id="event-form">
                         <input type="text" id="event-title" placeholder="予定のタイトル" required>
                         
-                        <div class="datetime-group">
-                            <label for="event-start-date">開始日時:</label>
-                            <input type="datetime-local" id="event-start-date" required step="600">
+                        <div class="date-group">
+                            <label for="event-start-date">開始日:</label>
+                            <input type="date" id="event-start-date" required> 
                             
-                            <label for="event-end-date">終了日時:</label>
-                            <input type="datetime-local" id="event-end-date" required step="600">
+                            <label for="event-end-date">終了日:</label>
+                            <input type="date" id="event-end-date" required>
                         </div>
                         
                         <button type="submit">追加</button>
@@ -51,8 +51,10 @@
                 <div class="form-container">
                     <h3>新しいタスクを追加</h3>
                     <form id="todo-form">
-                        <input type="text" id="todo-text" placeholder="タスクの内容" required>
-                        <button type="submit">追加</button>
+                        <div class="todo-input-group">
+                            <input type="text" id="todo-text" placeholder="タスクの内容" required>
+                            <button type="submit">追加</button>
+                        </div>
                     </form>
                 </div>
 
