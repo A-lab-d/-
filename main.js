@@ -12,37 +12,32 @@ function initApp() {
         return;
     }
 
-    // To Doリストの初期化
     initTodoList(user.uid);
-    // カレンダーの初期化
     initCalendar(user.uid);
 
-    // ログアウトボタン
     document.getElementById('logout-button').addEventListener('click', () => {
         auth.signOut();
     });
 }
 
-// To Doリスト機能の初期化
+// To Doリスト機能とカレンダー機能のコードはそのまま
+
+// --- To Doリスト機能（変更なし） ---
 function initTodoList(uid) {
     const todoForm = document.getElementById('todo-form');
     const todoList = document.getElementById('todo-list');
 
-    // タスクの追加
     todoForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         const text = document.getElementById('todo-text').value;
         if (text.trim() === '') return;
-
         await addDoc(collection(db, `users/${uid}/todos`), {
             text: text,
-            status: '検討中', // 初期ステータス
+            status: '検討中',
             createdAt: serverTimestamp()
         });
         document.getElementById('todo-text').value = '';
     });
-
-    // To Doリストのリアルタイム表示
     const q = query(collection(db, `users/${uid}/todos`), orderBy('createdAt'));
     onSnapshot(q, snapshot => {
         todoList.innerHTML = '';
@@ -56,21 +51,17 @@ function initTodoList(uid) {
             `;
             todoList.appendChild(li);
         });
-
-        // ステータス変更と削除のイベントリスナー
         todoList.querySelectorAll('.todo-status').forEach(btn => {
             btn.addEventListener('click', async (e) => {
                 const id = e.target.dataset.id;
                 const currentStatus = e.target.dataset.status;
                 const statuses = ['検討中', '実行中', '達成'];
                 const newStatus = statuses[(statuses.indexOf(currentStatus) + 1) % statuses.length];
-
                 await updateDoc(doc(db, `users/${uid}/todos`, id), {
                     status: newStatus
                 });
             });
         });
-
         todoList.querySelectorAll('.delete-button').forEach(btn => {
             btn.addEventListener('click', async (e) => {
                 const id = e.target.dataset.id;
@@ -80,7 +71,7 @@ function initTodoList(uid) {
     });
 }
 
-// カレンダー機能の初期化
+// --- カレンダー機能（変更なし） ---
 function initCalendar(uid) {
     const calendarEl = document.getElementById('calendar');
     calendar = new FullCalendar.Calendar(calendarEl, {
@@ -118,34 +109,48 @@ function initCalendar(uid) {
         }
     });
     calendar.render();
-
-    // 予定の追加
     const eventForm = document.getElementById('event-form');
     eventForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         const title = document.getElementById('event-title').value;
         const start = new Date(document.getElementById('event-start-date').value);
         const end = new Date(document.getElementById('event-end-date').value);
-
         if (title.trim() === '' || !start || !end || start >= end) {
             alert('入力内容を確認してください。');
             return;
         }
-
         await addDoc(collection(db, `users/${uid}/events`), {
             title: title,
             start: Timestamp.fromDate(start),
             end: Timestamp.fromDate(end)
         });
-
         document.getElementById('event-title').value = '';
         document.getElementById('event-start-date').value = '';
         document.getElementById('event-end-date').value = '';
-        
-        // カレンダーを再描画して最新のイベントを表示
         calendar.refetchEvents();
     });
 }
+
+// --- 認証ロジック ---
+// メールアドレス入力フォームの処理
+document.getElementById('email-form').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const email = document.getElementById('email').value;
+    // 任意の固定パスワード
+    const fixedPassword = 'secretpassword'; 
+
+    // Firebaseの認証を実行
+    auth.signInWithEmailAndPassword(email, fixedPassword)
+        .then((userCredential) => {
+            console.log("ログイン成功:", userCredential.user.email);
+            // ログイン成功後にアプリを初期化
+            initApp();
+        })
+        .catch(error => {
+            alert("ログインに失敗しました。メールアドレスを確認してください。");
+            console.error(error);
+        });
+});
 
 // ページ読み込み時に認証状態をチェックし、ログイン済みならinitAppを呼び出す
 auth.onAuthStateChanged(user => {
