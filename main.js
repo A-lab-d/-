@@ -38,7 +38,6 @@ function initTodoList(uid) {
         document.getElementById('todo-text').value = '';
     });
     
-    // 【修正箇所】: onSnapshotの引数全体を括る閉じ括弧を追加
     db.collection(`users/${uid}/todos`).orderBy('createdAt').onSnapshot(snapshot => { 
         todoList.innerHTML = '';
         snapshot.forEach(docSnap => {
@@ -84,11 +83,17 @@ function initCalendar(uid) {
         },
         editable: true,
         selectable: true,
-        eventClick: (info) => {
+        
+        // 【修正箇所】: 削除後にカレンダーを再描画（refetchEvents）する処理を追加
+        eventClick: async (info) => {
             if (confirm(`「${info.event.title}」を削除しますか？`)) {
-                db.collection(`users/${uid}/events`).doc(info.event.id).delete();
+                await db.collection(`users/${uid}/events`).doc(info.event.id).delete();
+                
+                // データベースからの削除が完了したら、カレンダーのイベントを再取得
+                calendar.refetchEvents();
             }
         },
+        
         events: async (fetchInfo, successCallback, failureCallback) => {
             try {
                 const snapshot = await db.collection(`users/${uid}/events`).get();
