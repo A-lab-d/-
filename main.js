@@ -4,6 +4,14 @@
 
 let calendar;
 
+// 【追加】ステータスとソート順の対応を定義
+const STATUS_ORDER_MAP = {
+    '実行中': 1, // 最優先
+    '検討中': 2,
+    '達成': 3     // 最低優先
+};
+const INITIAL_STATUS = '検討中';
+
 // アプリの機能を初期化する関数
 function initApp() {
     // authとdbはグローバル変数として使える
@@ -32,13 +40,20 @@ function initTodoList(uid) {
         if (text.trim() === '') return;
         await db.collection(`users/${uid}/todos`).add({
             text: text,
-            status: '検討中',
+            status: INITIAL_STATUS, // '検討中'
+            statusOrder: STATUS_ORDER_MAP[INITIAL_STATUS], // 【追加】初期ソート順 (2)
             createdAt: firebase.firestore.FieldValue.serverTimestamp()
         });
         document.getElementById('todo-text').value = '';
     });
     
-    db.collection(`users/${uid}/todos`).orderBy('createdAt').onSnapshot(snapshot => { 
+    // 【修正箇所】: ソート順を `statusOrder` の昇順、次に `createdAt` の昇順に変更
+    db.collection(`users/${uid}/todos`)
+        .orderBy('statusOrder') // 実行中(1) -> 検討中(2) -> 達成(3) の順に並べる
+        .orderBy('createdAt') // 同じステータス内では作成日時順に並べる
+        .onSnapshot(snapshot => { 
+        
+        // onSnapshotがリアルタイムで更新を検知するため、ステータス変更時の即時反映に対応します。
         todoList.innerHTML = '';
         snapshot.forEach(docSnap => {
             const data = docSnap.data();
@@ -50,17 +65,29 @@ function initTodoList(uid) {
             `;
             todoList.appendChild(li);
         });
+        
+        // ステータス変更のイベントリスナー
         todoList.querySelectorAll('.todo-status').forEach(btn => {
             btn.addEventListener('click', async (e) => {
                 const id = e.target.dataset.id;
                 const currentStatus = e.target.dataset.status;
                 const statuses = ['検討中', '実行中', '達成'];
-                const newStatus = statuses[(statuses.indexOf(currentStatus) + 1) % statuses.length];
+                
+                // 次のステータスに切り替え (現在のサイクルのまま)
+                const nextStatusIndex = (statuses.indexOf(currentStatus) + 1) % statuses.length;
+                const newStatus = statuses[nextStatusIndex];
+                
+                // 【追加】新しいステータスに対応するソート順を取得
+                const newStatusOrder = STATUS_ORDER_MAP[newStatus];
+
                 await db.collection(`users/${uid}/todos`).doc(id).update({
-                    status: newStatus
+                    status: newStatus,
+                    statusOrder: newStatusOrder // 【追加】ソート順を更新
                 });
+                // onSnapshotがこの更新を検知し、自動的にリストを再ソート＆更新します。
             });
         });
+        
         todoList.querySelectorAll('.delete-button').forEach(btn => {
             btn.addEventListener('click', async (e) => {
                 const id = e.target.dataset.id;
@@ -70,7 +97,7 @@ function initTodoList(uid) {
     });
 }
 
-// --- カレンダー機能 ---
+// --- カレンダー機能（変更なし） ---
 function initCalendar(uid) {
     const calendarEl = document.getElementById('calendar');
     calendar = new FullCalendar.Calendar(calendarEl, {
@@ -83,17 +110,12 @@ function initCalendar(uid) {
         },
         editable: true,
         selectable: true,
-        
-        // 【修正箇所】: 削除後にカレンダーを再描画（refetchEvents）する処理を追加
         eventClick: async (info) => {
             if (confirm(`「${info.event.title}」を削除しますか？`)) {
                 await db.collection(`users/${uid}/events`).doc(info.event.id).delete();
-                
-                // データベースからの削除が完了したら、カレンダーのイベントを再取得
                 calendar.refetchEvents();
             }
         },
-        
         events: async (fetchInfo, successCallback, failureCallback) => {
             try {
                 const snapshot = await db.collection(`users/${uid}/events`).get();
@@ -136,7 +158,7 @@ function initCalendar(uid) {
     });
 }
 
-// --- 認証ロジック ---
+// --- 認証ロジック（変更なし） ---
 document.getElementById('email-form').addEventListener('submit', (e) => {
     e.preventDefault();
     const email = document.getElementById('email').value;
