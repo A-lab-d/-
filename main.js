@@ -4,7 +4,7 @@
 
 let calendar;
 
-// 【追加】ステータスとソート順の対応を定義
+// ステータスとソート順の対応を定義
 const STATUS_ORDER_MAP = {
     '実行中': 1, // 最優先
     '検討中': 2,
@@ -41,13 +41,13 @@ function initTodoList(uid) {
         await db.collection(`users/${uid}/todos`).add({
             text: text,
             status: INITIAL_STATUS, // '検討中'
-            statusOrder: STATUS_ORDER_MAP[INITIAL_STATUS], // 【追加】初期ソート順 (2)
+            statusOrder: STATUS_ORDER_MAP[INITIAL_STATUS], // 初期ソート順 (2)
             createdAt: firebase.firestore.FieldValue.serverTimestamp()
         });
         document.getElementById('todo-text').value = '';
     });
     
-    // 【修正箇所】: ソート順を `statusOrder` の昇順、次に `createdAt` の昇順に変更
+    // ソート順を `statusOrder` の昇順、次に `createdAt` の昇順に変更
     db.collection(`users/${uid}/todos`)
         .orderBy('statusOrder') // 実行中(1) -> 検討中(2) -> 達成(3) の順に並べる
         .orderBy('createdAt') // 同じステータス内では作成日時順に並べる
@@ -73,18 +73,17 @@ function initTodoList(uid) {
                 const currentStatus = e.target.dataset.status;
                 const statuses = ['検討中', '実行中', '達成'];
                 
-                // 次のステータスに切り替え (現在のサイクルのまま)
+                // 次のステータスに切り替え
                 const nextStatusIndex = (statuses.indexOf(currentStatus) + 1) % statuses.length;
                 const newStatus = statuses[nextStatusIndex];
                 
-                // 【追加】新しいステータスに対応するソート順を取得
+                // 新しいステータスに対応するソート順を取得
                 const newStatusOrder = STATUS_ORDER_MAP[newStatus];
 
                 await db.collection(`users/${uid}/todos`).doc(id).update({
                     status: newStatus,
-                    statusOrder: newStatusOrder // 【追加】ソート順を更新
+                    statusOrder: newStatusOrder // ソート順を更新
                 });
-                // onSnapshotがこの更新を検知し、自動的にリストを再ソート＆更新します。
             });
         });
         
@@ -97,7 +96,7 @@ function initTodoList(uid) {
     });
 }
 
-// --- カレンダー機能（変更なし） ---
+// --- カレンダー機能 ---
 function initCalendar(uid) {
     const calendarEl = document.getElementById('calendar');
     calendar = new FullCalendar.Calendar(calendarEl, {
@@ -158,7 +157,7 @@ function initCalendar(uid) {
     });
 }
 
-// --- 認証ロジック（変更なし） ---
+// --- 認証ロジック ---
 document.getElementById('email-form').addEventListener('submit', (e) => {
     e.preventDefault();
     const email = document.getElementById('email').value;
