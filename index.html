@@ -33,6 +33,13 @@
                     <form id="event-form">
                         <input type="text" id="event-title" placeholder="予定のタイトル" required>
                         
+                        <div class="assignee-group">
+                            <label for="event-assignee">担当者:</label>
+                            <select id="event-assignee" required>
+                                <option value="全員">全員</option>
+                            </select>
+                        </div>
+                        
                         <div class="date-group">
                             <label for="event-start-date">開始日:</label>
                             <input type="date" id="event-start-date" required> 
@@ -61,6 +68,23 @@
                 <ul id="todo-list"></ul>
             </section>
         </main>
+        
+        <section class="tag-management-section">
+            <h2>個人タグ管理</h2>
+            <div class="form-container">
+                <h3>新しい個人タグを作成</h3>
+                <form id="tag-form">
+                    <div class="tag-input-group">
+                        <input type="text" id="new-tag-name" placeholder="タグ名 (例: 山田)" required>
+                        <button type="submit">作成</button>
+                    </div>
+                </form>
+            </div>
+            <h4>登録済みのタグ</h4>
+            <ul id="tag-list">
+                </ul>
+        </section>
+        
     </div>
 
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
