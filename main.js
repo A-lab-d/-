@@ -22,7 +22,7 @@ function initApp() {
     
     initTodoList(user.uid);
     initCalendar(user.uid);
-    // 【新規追加】: 担当者UIロジックを初期化
+    // 【修正】: initTagManagement の呼び出しを削除 (main.js:26 のエラー解消)
     initAssigneeUI(); 
 
     document.getElementById('logout-button').addEventListener('click', () => {
@@ -92,7 +92,7 @@ function initTodoList(uid) {
     });
 }
 
-// --- 担当者UIロジック（新規追加） ---
+// --- 担当者UIロジック（変更なし） ---
 function initAssigneeUI() {
     const individualAssigneesDiv = document.getElementById('individual-assignees');
     const assigneeRadios = document.getElementsByName('assigneeType');
@@ -109,7 +109,7 @@ function initAssigneeUI() {
     });
 }
 
-// --- カレンダー機能（担当者欄のデータ送信を修正） ---
+// --- カレンダー機能 ---
 function initCalendar(uid) {
     const calendarEl = document.getElementById('calendar');
     calendar = new FullCalendar.Calendar(calendarEl, {
@@ -120,7 +120,7 @@ function initCalendar(uid) {
             center: 'title',
             right: 'dayGridMonth,timeGridWeek,timeGridDay'
         },
-        allDay: true,
+        // 【修正】: allDay: true は不要なオプションのため削除
         editable: true,
         selectable: true,
         eventClick: async (info) => {
@@ -136,12 +136,11 @@ function initCalendar(uid) {
                 snapshot.forEach(docSnap => {
                     const data = docSnap.data();
                     
-                    // 担当者データが配列か文字列かを判断し、表示を整形
                     let assigneeDisplay;
                     if (Array.isArray(data.assignee)) {
-                        assigneeDisplay = data.assignee.join(', '); // 個人リストをカンマ区切りに
+                        assigneeDisplay = data.assignee.join(', ');
                     } else {
-                        assigneeDisplay = data.assignee; // 「全員」など
+                        assigneeDisplay = data.assignee;
                     }
 
                     const displayTitle = `${data.title} (${assigneeDisplay})`;
@@ -150,7 +149,7 @@ function initCalendar(uid) {
                         title: displayTitle,
                         start: data.start, 
                         end: data.end,
-                        allDay: true
+                        allDay: true // イベントデータとして全日を設定
                     });
                 });
                 successCallback(events);
@@ -171,7 +170,6 @@ function initCalendar(uid) {
         if (assigneeType === '全員') {
             finalAssignee = '全員';
         } else {
-            // 個人入力欄から値を取得し、空でないものだけをフィルタリング
             const individualNames = [];
             for (let i = 1; i <= 4; i++) {
                 const name = document.getElementById(`assignee-${i}`).value.trim();
@@ -184,7 +182,7 @@ function initCalendar(uid) {
                 alert('個人を担当者にする場合、担当者は少なくとも1人入力してください。');
                 return;
             }
-            finalAssignee = individualNames; // 配列として保存
+            finalAssignee = individualNames;
         }
 
         const startInput = document.getElementById('event-start-date').value;
@@ -201,17 +199,17 @@ function initCalendar(uid) {
         
         await db.collection(`users/${uid}/events`).add({
             title: title,
-            assignee: finalAssignee, // 配列または文字列を保存
+            assignee: finalAssignee,
             start: startInput, 
             end: endDay,
-            allDay: true
+            allDay: true // データベースには全日イベントとして保存
         });
         
         // フォームをクリア
         document.getElementById('event-title').value = '';
         document.getElementById('event-start-date').value = '';
         document.getElementById('event-end-date').value = '';
-        document.getElementById('assignee-all').checked = true; // デフォルトに戻す
+        document.getElementById('assignee-all').checked = true;
         document.getElementById('individual-assignees').style.display = 'none';
         document.getElementById('assignee-1').value = '';
         document.getElementById('assignee-2').value = '';
