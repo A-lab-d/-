@@ -20,7 +20,9 @@ function initApp() {
         console.error("ユーザーが認証されていません。");
         return;
     }
-
+    
+    // エラーの原因となった、不要なカスタム時間生成ロジックを削除したため、
+    // ここで initTodoList と initCalendar が実行されるようになります。
     initTodoList(user.uid);
     initCalendar(user.uid);
 
@@ -40,16 +42,16 @@ function initTodoList(uid) {
         if (text.trim() === '') return;
         await db.collection(`users/${uid}/todos`).add({
             text: text,
-            status: INITIAL_STATUS, 
-            statusOrder: STATUS_ORDER_MAP[INITIAL_STATUS], 
+            status: INITIAL_STATUS,
+            statusOrder: STATUS_ORDER_MAP[INITIAL_STATUS],
             createdAt: firebase.firestore.FieldValue.serverTimestamp()
         });
         document.getElementById('todo-text').value = '';
     });
     
     db.collection(`users/${uid}/todos`)
-        .orderBy('statusOrder') 
-        .orderBy('createdAt') 
+        .orderBy('statusOrder')
+        .orderBy('createdAt')
         .onSnapshot(snapshot => { 
         
         todoList.innerHTML = '';
@@ -91,7 +93,7 @@ function initTodoList(uid) {
     });
 }
 
-// --- カレンダー機能 ---
+// --- カレンダー機能（修正に伴いIDを元に戻す） ---
 function initCalendar(uid) {
     const calendarEl = document.getElementById('calendar');
     calendar = new FullCalendar.Calendar(calendarEl, {
@@ -135,17 +137,15 @@ function initCalendar(uid) {
         e.preventDefault();
         const title = document.getElementById('event-title').value;
         
-        // 【修正箇所】: 4つのフィールドから値を取得し、結合してDateオブジェクトを作成
-        const startDatePart = document.getElementById('event-start-date-part').value;
-        const startTimePart = document.getElementById('event-start-time-part').value;
-        const endDatePart = document.getElementById('event-end-date-part').value;
-        const endTimePart = document.getElementById('event-end-time-part').value;
+        // 【修正箇所】: datetime-localのIDに戻す
+        const startInput = document.getElementById('event-start-date').value;
+        const endInput = document.getElementById('event-end-date').value;
 
-        // 日付と時間を結合してISO 8601形式の文字列を作成し、Dateオブジェクトに変換
-        const start = new Date(`${startDatePart}T${startTimePart}:00`);
-        const end = new Date(`${endDatePart}T${endTimePart}:00`);
+        // datetime-local の値は ISO 8601 形式なので、そのまま Date に変換できる
+        const start = new Date(startInput);
+        const end = new Date(endInput);
 
-        if (title.trim() === '' || !start || !end || start >= end) {
+        if (title.trim() === '' || !startInput || !endInput || start >= end) {
             alert('入力内容を確認してください。');
             return;
         }
@@ -155,13 +155,11 @@ function initCalendar(uid) {
             end: firebase.firestore.Timestamp.fromDate(end)
         });
         
-        // フォームをクリア (日付と時間の各パーツをクリア)
+        // フォームをクリア (datetime-localのIDに戻す)
         document.getElementById('event-title').value = '';
-        document.getElementById('event-start-date-part').value = '';
-        document.getElementById('event-start-time-part').value = '';
-        document.getElementById('event-end-date-part').value = '';
-        document.getElementById('event-end-time-part').value = '';
-
+        document.getElementById('event-start-date').value = '';
+        document.getElementById('event-end-date').value = '';
+        
         calendar.refetchEvents();
     });
 }
