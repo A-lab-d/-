@@ -27,6 +27,7 @@
             <section class="calendar-section">
                 <h2>カレンダー</h2>
                 <div id="calendar"></div>
+                
                 <div class="form-container">
                     <h3>新しい予定を追加</h3>
                     <form id="event-form">
@@ -37,6 +38,7 @@
                     </form>
                 </div>
             </section>
+
             <section class="todo-section">
                 <h2>To Doリスト</h2>
                 <div class="form-container">
@@ -46,19 +48,20 @@
                         <button type="submit">追加</button>
                     </form>
                 </div>
+
                 <ul id="todo-list"></ul>
             </section>
         </main>
     </div>
 
-    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js" type="module"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js" type="module"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js" type="module"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
     
     <script src='https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.js'></script>
     <script src='https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/locales-all.min.js'></script>
 
-    <script type="module" src="firebase-config.js"></script>
-    <script type="module" src="main.js"></script>
+    <script src="firebase-config.js"></script>
+    <script src="main.js"></script>
 </body>
 </html>
