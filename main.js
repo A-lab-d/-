@@ -12,14 +12,31 @@ const STATUS_ORDER_MAP = {
 };
 const INITIAL_STATUS = '検討中';
 
+// --- ユーティリティ関数: 10分刻みの時刻オプションを生成 ---
+function generateTimeOptions(selectElement) {
+    let html = '';
+    for (let h = 0; h < 24; h++) {
+        for (let m = 0; m < 60; m += 10) { // 10分刻み
+            const hour = String(h).padStart(2, '0');
+            const minute = String(m).padStart(2, '0');
+            const timeValue = `${hour}:${minute}`;
+            html += `<option value="${timeValue}">${timeValue}</option>`;
+        }
+    }
+    selectElement.innerHTML = html;
+}
+
 // アプリの機能を初期化する関数
 function initApp() {
-    // authとdbはグローバル変数として使える
     const user = auth.currentUser;
     if (!user) {
         console.error("ユーザーが認証されていません。");
         return;
     }
+
+    // 【修正】時刻オプションの生成を初期化時に実行
+    generateTimeOptions(document.getElementById('event-start-time'));
+    generateTimeOptions(document.getElementById('event-end-time'));
 
     initTodoList(user.uid);
     initCalendar(user.uid);
@@ -29,7 +46,7 @@ function initApp() {
     });
 }
 
-// --- To Doリスト機能 ---
+// --- To Doリスト機能 (変更なし) ---
 function initTodoList(uid) {
     const todoForm = document.getElementById('todo-form');
     const todoList = document.getElementById('todo-list');
@@ -40,20 +57,18 @@ function initTodoList(uid) {
         if (text.trim() === '') return;
         await db.collection(`users/${uid}/todos`).add({
             text: text,
-            status: INITIAL_STATUS, // '検討中'
-            statusOrder: STATUS_ORDER_MAP[INITIAL_STATUS], // 初期ソート順 (2)
+            status: INITIAL_STATUS,
+            statusOrder: STATUS_ORDER_MAP[INITIAL_STATUS],
             createdAt: firebase.firestore.FieldValue.serverTimestamp()
         });
         document.getElementById('todo-text').value = '';
     });
     
-    // ソート順を `statusOrder` の昇順、次に `createdAt` の昇順に変更
     db.collection(`users/${uid}/todos`)
-        .orderBy('statusOrder') // 実行中(1) -> 検討中(2) -> 達成(3) の順に並べる
-        .orderBy('createdAt') // 同じステータス内では作成日時順に並べる
+        .orderBy('statusOrder')
+        .orderBy('createdAt')
         .onSnapshot(snapshot => { 
         
-        // onSnapshotがリアルタイムで更新を検知するため、ステータス変更時の即時反映に対応します。
         todoList.innerHTML = '';
         snapshot.forEach(docSnap => {
             const data = docSnap.data();
@@ -66,23 +81,20 @@ function initTodoList(uid) {
             todoList.appendChild(li);
         });
         
-        // ステータス変更のイベントリスナー
         todoList.querySelectorAll('.todo-status').forEach(btn => {
             btn.addEventListener('click', async (e) => {
                 const id = e.target.dataset.id;
                 const currentStatus = e.target.dataset.status;
                 const statuses = ['検討中', '実行中', '達成'];
                 
-                // 次のステータスに切り替え
                 const nextStatusIndex = (statuses.indexOf(currentStatus) + 1) % statuses.length;
                 const newStatus = statuses[nextStatusIndex];
                 
-                // 新しいステータスに対応するソート順を取得
                 const newStatusOrder = STATUS_ORDER_MAP[newStatus];
 
                 await db.collection(`users/${uid}/todos`).doc(id).update({
                     status: newStatus,
-                    statusOrder: newStatusOrder // ソート順を更新
+                    statusOrder: newStatusOrder
                 });
             });
         });
@@ -135,29 +147,44 @@ function initCalendar(uid) {
         }
     });
     calendar.render();
+    
     const eventForm = document.getElementById('event-form');
     eventForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         const title = document.getElementById('event-title').value;
-        const start = new Date(document.getElementById('event-start-date').value);
-        const end = new Date(document.getElementById('event-end-date').value);
-        if (title.trim() === '' || !start || !end || start >= end) {
+        
+        // 【修正箇所】: 日付と時間を分離して取得
+        const startDate = document.getElementById('event-start-date').value;
+        const startTime = document.getElementById('event-start-time').value;
+        const endDate = document.getElementById('event-end-date').value;
+        const endTime = document.getElementById('event-end-time').value;
+
+        // 日付と時間を結合してDateオブジェクトを作成
+        const start = new Date(`${startDate}T${startTime}:00`);
+        const end = new Date(`${endDate}T${endTime}:00`);
+
+        if (title.trim() === '' || !startDate || !startTime || !endDate || !endTime || start >= end) {
             alert('入力内容を確認してください。');
             return;
         }
+
         await db.collection(`users/${uid}/events`).add({
             title: title,
             start: firebase.firestore.Timestamp.fromDate(start),
             end: firebase.firestore.Timestamp.fromDate(end)
         });
+
         document.getElementById('event-title').value = '';
-        document.getElementById('event-start-date').value = '';
-        document.getElementById('event-end-date').value = '';
+        // フォームをリセット（日付と時間入力はそのまま）
+        // document.getElementById('event-start-date').value = '';
+        // document.getElementById('event-start-time').value = '';
+        // document.getElementById('event-end-date').value = '';
+        // document.getElementById('event-end-time').value = '';
         calendar.refetchEvents();
     });
 }
 
-// --- 認証ロジック ---
+// --- 認証ロジック (変更なし) ---
 document.getElementById('email-form').addEventListener('submit', (e) => {
     e.preventDefault();
     const email = document.getElementById('email').value;
