@@ -116,13 +116,12 @@ main {
 }
 
 /* --- レスポンシブ対応 (スマートフォン表示時の修正) --- */
-/* 画面幅が800px以下の場合に適用 */
 @media (max-width: 800px) {
     
-    /* アプリの最大幅を画面幅に合わせ、中央寄せを調整 */
+    /* アプリの最大幅と余白を調整 */
     #auth-container, #app-container {
         max-width: 100%;
-        margin: 0 10px; /* 左右に少し余白を持たせる */
+        margin: 0 10px;
         padding: 10px;
     }
 
@@ -134,9 +133,30 @@ main {
 
     /* 各セクションが横幅いっぱいに広がるようにする */
     .calendar-section, .todo-section {
-        flex: none; /* Flexの比率を解除 */
-        width: auto; /* width: 100% と同じ効果 (paddingと合わせるためauto) */
-        min-width: unset; /* 最小幅の制限を解除 */
+        flex: none;
+        width: auto;
+        min-width: unset;
         padding: 15px;
+    }
+    
+    /* 【カレンダーのボタン・文字サイズ調整】 */
+    /* カレンダーのヘッダー全体のフォントサイズを縮小 */
+    .fc .fc-toolbar {
+        font-size: 0.8em; /* 全体のボタンと文字を少し小さく */
+    }
+
+    /* ツールバーのタイトル (年と月) をさらに小さく */
+    .fc-toolbar-title {
+        font-size: 1.1em !important; /* 既存の1.5emから縮小 */
+    }
+
+    /* 曜日表示の文字を小さく */
+    .fc-col-header-cell-cushion {
+        font-size: 0.8em;
+    }
+
+    /* 日付の文字を小さく */
+    .fc-daygrid-day-number {
+        font-size: 0.8em;
     }
 }
