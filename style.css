@@ -6,7 +6,7 @@ body {
 }
 
 #auth-container, #app-container {
-    max-width: 1200px; /* PC/タブレット表示時の最大幅 */
+    max-width: 1200px;
     margin: 0 auto;
     background: #fff;
     padding: 20px;
@@ -34,20 +34,20 @@ header {
 
 /* --- PC/タブレット (横並び) の設定 --- */
 main {
-    display: flex; /* Flexboxを有効化 */
-    gap: 20px;     /* セクション間の間隔を設定 */
+    display: flex;
+    gap: 20px;
 }
 
 .calendar-section {
-    flex: 2; /* カレンダーセクションに多めのスペース（2/3程度）を割り当て */
-    min-width: 550px; /* カレンダー表示のための最小幅を確保 */
+    flex: 2;
+    min-width: 550px;
     padding: 20px;
     border-radius: 8px;
     background-color: #fafafa;
 }
 
 .todo-section {
-    flex: 1; /* To Doリストセクションに少なめのスペース（1/3程度）を割り当て */
+    flex: 1;
     padding: 20px;
     border-radius: 8px;
     background-color: #fafafa;
@@ -74,12 +74,31 @@ main {
 }
 
 .form-container input, .form-container button {
-    /* datetime-group の外にある要素に対する設定 */
-    width: 100%; 
+    /* datetime-group, todo-input-group 外の要素に対する設定 */
     padding: 8px;
     margin-bottom: 10px;
     box-sizing: border-box;
+    width: 100%; 
 }
+
+/* --- To Doリストフォームの修正 --- */
+.todo-input-group {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.todo-input-group input[type="text"] {
+    flex-grow: 1; 
+    width: auto;
+}
+
+.todo-input-group button {
+    flex-shrink: 0;
+    width: auto; 
+}
+/* ---------------------------------- */
+
 
 #todo-list {
     list-style: none;
@@ -116,31 +135,28 @@ main {
     font-size: 1.2em;
 }
 
-/* --- 日付と時間の横並び調整 (新しい予定を追加フォーム内) --- */
+/* --- 日付入力の横並び調整 --- */
 
-.datetime-group {
+.date-group {
     display: grid;
     /* ラベル(auto), 入力(1fr), ラベル(auto), 入力(1fr) の4列に分割 */
     grid-template-columns: auto 1fr auto 1fr; 
     gap: 10px;
     margin-bottom: 10px;
-    align-items: center; /* ラベルと入力を中央揃えに */
+    align-items: center;
     flex-wrap: wrap; 
 }
 
-.datetime-group input[type="datetime-local"] {
-    /* 【修正】: 最大幅を制限し、入力フィールドが過剰に伸びるのを防ぐ */
-    max-width: 250px; 
-    
-    /* gridのコンテナ内で適切に表示させるために、widthはautoまたは100%にする */
-    width: 100%; 
+.date-group input[type="date"] {
+    width: auto; 
+    max-width: 200px; /* 日付入力に適した幅に制限 */
     padding: 8px;
     box-sizing: border-box;
     margin-bottom: 0;
 }
 
-.datetime-group label {
-    white-space: nowrap; /* ラベルが折り返さないように */
+.date-group label {
+    white-space: nowrap;
     font-weight: bold;
     font-size: 0.9em;
 }
@@ -149,20 +165,17 @@ main {
 /* --- レスポンシブ対応 (スマートフォン表示時の修正) --- */
 @media (max-width: 800px) {
     
-    /* アプリの最大幅と余白を調整 */
     #auth-container, #app-container {
         max-width: 100%;
         margin: 0 10px;
         padding: 10px;
     }
 
-    /* mainセクションを縦並び（column）に変更 */
     main {
         flex-direction: column;
         gap: 10px;
     }
 
-    /* 各セクションが横幅いっぱいに広がるようにする */
     .calendar-section, .todo-section {
         flex: none;
         width: auto;
@@ -184,20 +197,25 @@ main {
         font-size: 0.8em;
     }
 
-    /* datetime-group を縦並びに戻す */
-    .datetime-group {
-        /* ラベルと入力が縦に並ぶように 2列から1列に変更 */
+    /* 日付入力グループを縦並びに戻す */
+    .date-group {
         grid-template-columns: 1fr;
         gap: 5px;
     }
     
     /* 縦並びの際にはラベルを上部に配置 */
-    .datetime-group label {
+    .date-group label {
         margin-top: 5px;
     }
     
-    /* スマートフォンでは入力フィールドの幅制限を解除 (画面いっぱいに広げるため) */
-    .datetime-group input[type="datetime-local"] {
+    /* スマートフォンでは入力フィールドの幅制限を解除 */
+    .date-group input[type="date"] {
         max-width: none;
+    }
+    
+    /* ToDoリストの入力グループも縦に並ぶように */
+    .todo-input-group {
+        flex-direction: column;
+        gap: 5px;
     }
 }
