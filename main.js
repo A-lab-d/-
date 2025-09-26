@@ -1,6 +1,8 @@
 // main.js
-import { auth, db } from "./firebase-config.js";
-import { collection, addDoc, getDocs, doc, updateDoc, deleteDoc, orderBy, query, onSnapshot, serverTimestamp, Timestamp } from "firebase/firestore";
+
+// firebase-config.js から auth と db をインポート
+// import { auth, db } from "./firebase-config.js";
+// これらはグローバルな変数として扱われるため、インポートは不要
 
 let calendar;
 
@@ -20,9 +22,7 @@ function initApp() {
     });
 }
 
-// To Doリスト機能とカレンダー機能のコードはそのまま
-
-// --- To Doリスト機能（変更なし） ---
+// --- To Doリスト機能 ---
 function initTodoList(uid) {
     const todoForm = document.getElementById('todo-form');
     const todoList = document.getElementById('todo-list');
@@ -31,15 +31,15 @@ function initTodoList(uid) {
         e.preventDefault();
         const text = document.getElementById('todo-text').value;
         if (text.trim() === '') return;
-        await addDoc(collection(db, `users/${uid}/todos`), {
+        await db.collection(`users/${uid}/todos`).add({
             text: text,
             status: '検討中',
-            createdAt: serverTimestamp()
+            createdAt: firebase.firestore.FieldValue.serverTimestamp()
         });
         document.getElementById('todo-text').value = '';
     });
-    const q = query(collection(db, `users/${uid}/todos`), orderBy('createdAt'));
-    onSnapshot(q, snapshot => {
+    
+    db.collection(`users/${uid}/todos').orderBy('createdAt').onSnapshot(snapshot => {
         todoList.innerHTML = '';
         snapshot.forEach(docSnap => {
             const data = docSnap.data();
@@ -57,7 +57,7 @@ function initTodoList(uid) {
                 const currentStatus = e.target.dataset.status;
                 const statuses = ['検討中', '実行中', '達成'];
                 const newStatus = statuses[(statuses.indexOf(currentStatus) + 1) % statuses.length];
-                await updateDoc(doc(db, `users/${uid}/todos`, id), {
+                await db.collection(`users/${uid}/todos`).doc(id).update({
                     status: newStatus
                 });
             });
@@ -65,13 +65,13 @@ function initTodoList(uid) {
         todoList.querySelectorAll('.delete-button').forEach(btn => {
             btn.addEventListener('click', async (e) => {
                 const id = e.target.dataset.id;
-                await deleteDoc(doc(db, `users/${uid}/todos`, id));
+                await db.collection(`users/${uid}/todos`).doc(id).delete();
             });
         });
     });
 }
 
-// --- カレンダー機能（変更なし） ---
+// --- カレンダー機能 ---
 function initCalendar(uid) {
     const calendarEl = document.getElementById('calendar');
     calendar = new FullCalendar.Calendar(calendarEl, {
@@ -86,12 +86,12 @@ function initCalendar(uid) {
         selectable: true,
         eventClick: (info) => {
             if (confirm(`「${info.event.title}」を削除しますか？`)) {
-                deleteDoc(doc(db, `users/${uid}/events`, info.event.id));
+                db.collection(`users/${uid}/events`).doc(info.event.id).delete();
             }
         },
         events: async (fetchInfo, successCallback, failureCallback) => {
             try {
-                const snapshot = await getDocs(collection(db, `users/${uid}/events`));
+                const snapshot = await db.collection(`users/${uid}/events`).get();
                 const events = [];
                 snapshot.forEach(docSnap => {
                     const data = docSnap.data();
@@ -119,10 +119,10 @@ function initCalendar(uid) {
             alert('入力内容を確認してください。');
             return;
         }
-        await addDoc(collection(db, `users/${uid}/events`), {
+        await db.collection(`users/${uid}/events`).add({
             title: title,
-            start: Timestamp.fromDate(start),
-            end: Timestamp.fromDate(end)
+            start: firebase.firestore.Timestamp.fromDate(start),
+            end: firebase.firestore.Timestamp.fromDate(end)
         });
         document.getElementById('event-title').value = '';
         document.getElementById('event-start-date').value = '';
@@ -132,18 +132,13 @@ function initCalendar(uid) {
 }
 
 // --- 認証ロジック ---
-// メールアドレス入力フォームの処理
 document.getElementById('email-form').addEventListener('submit', (e) => {
     e.preventDefault();
     const email = document.getElementById('email').value;
-    // 任意の固定パスワード
     const fixedPassword = 'secretpassword'; 
-
-    // Firebaseの認証を実行
     auth.signInWithEmailAndPassword(email, fixedPassword)
         .then((userCredential) => {
             console.log("ログイン成功:", userCredential.user.email);
-            // ログイン成功後にアプリを初期化
             initApp();
         })
         .catch(error => {
