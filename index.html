@@ -34,17 +34,13 @@
                         <input type="text" id="event-title" placeholder="予定のタイトル" required>
                         
                         <div class="datetime-group">
-                            <div class="start-datetime-wrapper">
-                                <input type="date" id="event-start-date-part" required>
-                                <input type="time" id="event-start-time-part" required step="600">
-                            </div>
-
-                            <div class="end-datetime-wrapper">
-                                <input type="date" id="event-end-date-part" required>
-                                <input type="time" id="event-end-time-part" required step="600">
-                            </div>
+                            <label for="event-start-date">開始日時:</label>
+                            <input type="datetime-local" id="event-start-date" required step="600">
+                            
+                            <label for="event-end-date">終了日時:</label>
+                            <input type="datetime-local" id="event-end-date" required step="600">
                         </div>
-
+                        
                         <button type="submit">追加</button>
                     </form>
                 </div>
