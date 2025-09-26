@@ -38,7 +38,7 @@ function initTodoList(uid) {
         document.getElementById('todo-text').value = '';
     });
     
-    // 【修正箇所】: ここで閉じ括弧`)`が不足していました
+    // 【修正箇所】: onSnapshotの引数全体を括る閉じ括弧を追加
     db.collection(`users/${uid}/todos`).orderBy('createdAt').onSnapshot(snapshot => { 
         todoList.innerHTML = '';
         snapshot.forEach(docSnap => {
@@ -142,7 +142,6 @@ document.getElementById('email-form').addEventListener('submit', (e) => {
             initApp();
         })
         .catch(error => {
-            // Firebase側でユーザーが見つからない、またはパスワードが違う場合はここでエラーが出る
             alert("ログインに失敗しました。メールアドレスまたはパスワードが正しくありません。");
             console.error(error);
         });
