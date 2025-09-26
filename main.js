@@ -22,8 +22,8 @@ function initApp() {
     
     initTodoList(user.uid);
     initCalendar(user.uid);
-    // 【新規追加】: タグ管理機能を初期化
-    initTagManagement(user.uid); 
+    // 【新規追加】: 担当者UIロジックを初期化
+    initAssigneeUI(); 
 
     document.getElementById('logout-button').addEventListener('click', () => {
         auth.signOut();
@@ -92,59 +92,19 @@ function initTodoList(uid) {
     });
 }
 
-// --- 担当者タグ管理機能（新規追加） ---
-function initTagManagement(uid) {
-    const tagForm = document.getElementById('tag-form');
-    const tagList = document.getElementById('tag-list');
-    const eventAssigneeSelect = document.getElementById('event-assignee');
-    const tagsCollection = db.collection(`users/${uid}/tags`);
-
-    // タグの追加
-    tagForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const tagName = document.getElementById('new-tag-name').value.trim();
-        if (tagName === '') return;
-
-        await tagsCollection.add({
-            name: tagName,
-            createdAt: firebase.firestore.FieldValue.serverTimestamp()
-        });
-        document.getElementById('new-tag-name').value = '';
-    });
-
-    // タグのリアルタイム表示とカレンダー選択肢への反映
-    tagsCollection.orderBy('createdAt').onSnapshot(snapshot => {
-        tagList.innerHTML = '';
-        
-        // 【カレンダー選択肢の初期化】: 「全員」オプションを保持
-        const currentOptions = Array.from(eventAssigneeSelect.options);
-        eventAssigneeSelect.innerHTML = '';
-        eventAssigneeSelect.appendChild(currentOptions[0]); // 「全員」を最初に追加
-
-        snapshot.forEach(docSnap => {
-            const tagName = docSnap.data().name;
-
-            // 1. タグ管理リストの更新
-            const li = document.createElement('li');
-            li.innerHTML = `
-                <span>${tagName}</span>
-                <button class="delete-tag-button" data-id="${docSnap.id}">x</button>
-            `;
-            tagList.appendChild(li);
-
-            // 2. カレンダー担当者選択肢の更新
-            const option = document.createElement('option');
-            option.value = tagName;
-            option.textContent = tagName;
-            eventAssigneeSelect.appendChild(option);
-        });
-
-        // タグ削除イベントリスナー
-        tagList.querySelectorAll('.delete-tag-button').forEach(btn => {
-            btn.addEventListener('click', async (e) => {
-                const id = e.target.dataset.id;
-                await tagsCollection.doc(id).delete();
-            });
+// --- 担当者UIロジック（新規追加） ---
+function initAssigneeUI() {
+    const individualAssigneesDiv = document.getElementById('individual-assignees');
+    const assigneeRadios = document.getElementsByName('assigneeType');
+    
+    // ラジオボタンの変更を監視し、個人入力欄の表示/非表示を切り替える
+    assigneeRadios.forEach(radio => {
+        radio.addEventListener('change', (e) => {
+            if (e.target.value === '個人') {
+                individualAssigneesDiv.style.display = 'grid'; // CSS Gridで表示
+            } else {
+                individualAssigneesDiv.style.display = 'none';
+            }
         });
     });
 }
@@ -175,8 +135,16 @@ function initCalendar(uid) {
                 const events = [];
                 snapshot.forEach(docSnap => {
                     const data = docSnap.data();
-                    // イベントタイトルに担当者名を追加して表示
-                    const displayTitle = `${data.title} (${data.assignee})`;
+                    
+                    // 担当者データが配列か文字列かを判断し、表示を整形
+                    let assigneeDisplay;
+                    if (Array.isArray(data.assignee)) {
+                        assigneeDisplay = data.assignee.join(', '); // 個人リストをカンマ区切りに
+                    } else {
+                        assigneeDisplay = data.assignee; // 「全員」など
+                    }
+
+                    const displayTitle = `${data.title} (${assigneeDisplay})`;
                     events.push({
                         id: docSnap.id,
                         title: displayTitle,
@@ -196,8 +164,29 @@ function initCalendar(uid) {
     eventForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         const title = document.getElementById('event-title').value;
-        const assignee = document.getElementById('event-assignee').value; // 【追加】担当者名を取得
+        const assigneeType = document.querySelector('input[name="assigneeType"]:checked').value;
         
+        let finalAssignee;
+        
+        if (assigneeType === '全員') {
+            finalAssignee = '全員';
+        } else {
+            // 個人入力欄から値を取得し、空でないものだけをフィルタリング
+            const individualNames = [];
+            for (let i = 1; i <= 4; i++) {
+                const name = document.getElementById(`assignee-${i}`).value.trim();
+                if (name) {
+                    individualNames.push(name);
+                }
+            }
+            
+            if (individualNames.length === 0) {
+                alert('個人を担当者にする場合、担当者は少なくとも1人入力してください。');
+                return;
+            }
+            finalAssignee = individualNames; // 配列として保存
+        }
+
         const startInput = document.getElementById('event-start-date').value;
         const endInput = document.getElementById('event-end-date').value;
         
@@ -212,7 +201,7 @@ function initCalendar(uid) {
         
         await db.collection(`users/${uid}/events`).add({
             title: title,
-            assignee: assignee, // 【追加】担当者名を保存
+            assignee: finalAssignee, // 配列または文字列を保存
             start: startInput, 
             end: endDay,
             allDay: true
@@ -222,7 +211,12 @@ function initCalendar(uid) {
         document.getElementById('event-title').value = '';
         document.getElementById('event-start-date').value = '';
         document.getElementById('event-end-date').value = '';
-        document.getElementById('event-assignee').value = '全員'; // デフォルトに戻す
+        document.getElementById('assignee-all').checked = true; // デフォルトに戻す
+        document.getElementById('individual-assignees').style.display = 'none';
+        document.getElementById('assignee-1').value = '';
+        document.getElementById('assignee-2').value = '';
+        document.getElementById('assignee-3').value = '';
+        document.getElementById('assignee-4').value = '';
         
         calendar.refetchEvents();
     });
