@@ -56,13 +56,29 @@
                             <input type="text" id="assignee-4" placeholder="個人名 (任意)">
                         </div>
                         
-                        <div class="date-group">
+                        <div class="date-choice-group">
+                            <label>期間の指定:</label>
+                            <input type="radio" name="dateType" id="date-single" value="single" checked>
+                            <label for="date-single">単日</label>
+                            
+                            <input type="radio" name="dateType" id="date-range" value="range">
+                            <label for="date-range">複数日</label>
+                        </div>
+
+                        <div id="single-date-input" class="date-group">
+                            <label for="event-date">日付:</label>
+                            <input type="date" id="event-date" required>
+                        </div>
+                        
+                        <div id="range-date-input" class="date-group" style="display: none;">
                             <label for="event-start-date">開始日:</label>
-                            <input type="date" id="event-start-date" required> 
+                            <input type="date" id="event-start-date"> 
                             
                             <label for="event-end-date">終了日:</label>
-                            <input type="date" id="event-end-date" required>
+                            <input type="date" id="event-end-date">
                         </div>
+                        
+                        <textarea id="event-description" placeholder="予定の内容 (任意)"></textarea> 
                         
                         <button type="submit">追加</button>
                     </form>
@@ -85,6 +101,50 @@
                 <ul id="todo-list"></ul>
             </section>
         </main>
+        
+        <div id="event-detail-modal" class="modal" style="display: none;">
+            <div class="modal-content">
+                <span class="close-button">&times;</span>
+                <h3>予定の詳細と編集</h3>
+                <input type="hidden" id="detail-event-id">
+                
+                <label for="detail-title">タイトル:</label>
+                <input type="text" id="detail-title">
+
+                <label for="detail-description">内容:</label>
+                <textarea id="detail-description" rows="4"></textarea>
+
+                <div id="detail-dates">
+                    <label>期間:</label>
+                    <span id="detail-date-range"></span>
+                </div>
+                
+                <label>担当者:</label>
+                <div id="detail-assignee-edit">
+                    <div class="assignee-choice-group">
+                        <input type="radio" name="detailAssigneeType" id="detail-assignee-all" value="全員">
+                        <label for="detail-assignee-all">全員</label>
+                        
+                        <input type="radio" name="detailAssigneeType" id="detail-assignee-individual" value="個人">
+                        <label for="detail-assignee-individual">個人</label>
+                    </div>
+
+                    <div id="detail-individual-assignees" class="assignee-group" style="display: none;">
+                        <label for="detail-assignee-1">担当者1:</label>
+                        <input type="text" id="detail-assignee-1" placeholder="個人名 (必須)">
+                        <label for="detail-assignee-2">担当者2:</label>
+                        <input type="text" id="detail-assignee-2" placeholder="個人名 (任意)">
+                        <label for="detail-assignee-3">担当者3:</label>
+                        <input type="text" id="detail-assignee-3" placeholder="個人名 (任意)">
+                        <label for="detail-assignee-4">担当者4:</label>
+                        <input type="text" id="detail-assignee-4" placeholder="個人名 (任意)">
+                    </div>
+                </div>
+
+                <button id="detail-save-button">変更を保存</button>
+                <button id="detail-delete-button" class="delete-button-modal">予定を削除</button>
+            </div>
+        </div>
         
     </div>
 
