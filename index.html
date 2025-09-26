@@ -9,7 +9,15 @@
 </head>
 <body>
 
-    <div id="app-container">
+    <div id="auth-container">
+        <h1>メールアドレスを入力してください</h1>
+        <form id="email-form">
+            <input type="email" id="email" placeholder="メールアドレス" required>
+            <button type="submit">送信</button>
+        </form>
+    </div>
+
+    <div id="app-container" style="display: none;">
         <header>
             <h1>カレンダー＆To Doリスト</h1>
             <button id="logout-button">ログアウト</button>
@@ -19,7 +27,6 @@
             <section class="calendar-section">
                 <h2>カレンダー</h2>
                 <div id="calendar"></div>
-                
                 <div class="form-container">
                     <h3>新しい予定を追加</h3>
                     <form id="event-form">
@@ -30,7 +37,6 @@
                     </form>
                 </div>
             </section>
-
             <section class="todo-section">
                 <h2>To Doリスト</h2>
                 <div class="form-container">
@@ -40,7 +46,6 @@
                         <button type="submit">追加</button>
                     </form>
                 </div>
-
                 <ul id="todo-list"></ul>
             </section>
         </main>
