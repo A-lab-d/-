@@ -115,6 +115,36 @@ main {
     font-size: 1.2em;
 }
 
+/* --- 日付と時間の横並び調整 (新しい予定を追加フォーム内) --- */
+
+/* 開始日時と終了日時を2段にするためのラッパー */
+.datetime-group {
+    display: grid;
+    grid-template-columns: 1fr 1fr; /* 2列に分割 */
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+/* 日付と時刻のフィールドを横に並べるためのFlexbox設定 */
+.start-datetime-wrapper, 
+.end-datetime-wrapper {
+    display: flex;
+    gap: 5px; /* 日付と時刻の間隔 */
+}
+
+.start-datetime-wrapper input[type="date"],
+.end-datetime-wrapper input[type="date"] {
+    flex: 2; /* 日付フィールドに多めの幅を割り当て */
+    width: auto;
+}
+
+.start-datetime-wrapper input[type="time"],
+.end-datetime-wrapper input[type="time"] {
+    flex: 1; /* 時刻フィールドに少なめの幅を割り当て */
+    width: auto;
+}
+
+
 /* --- レスポンシブ対応 (スマートフォン表示時の修正) --- */
 @media (max-width: 800px) {
     
@@ -139,8 +169,7 @@ main {
         padding: 15px;
     }
     
-    /* 【カレンダーのボタン・文字サイズ調整】 */
-    /* カレンダーのヘッダー全体のフォントサイズを縮小 */
+    /* カレンダーのボタン・文字サイズ調整 */
     .fc .fc-toolbar {
         font-size: 0.8em; /* 全体のボタンと文字を少し小さく */
     }
@@ -158,5 +187,16 @@ main {
     /* 日付の文字を小さく */
     .fc-daygrid-day-number {
         font-size: 0.8em;
+    }
+
+    /* datetime-group を縦並びに戻す */
+    .datetime-group {
+        grid-template-columns: 1fr; /* 1列に戻す */
+    }
+
+    /* 開始日時と終了日時が縦に並ぶように */
+    .start-datetime-wrapper, 
+    .end-datetime-wrapper {
+        margin-bottom: 5px;
     }
 }
