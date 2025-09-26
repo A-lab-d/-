@@ -29,7 +29,7 @@ function initApp() {
     });
 }
 
-// --- To Doリスト機能（タイトルと内容に対応するよう修正） ---
+// --- To Doリスト機能（変更なし） ---
 function initTodoList(uid) {
     const todoForm = document.getElementById('todo-form');
     const todoList = document.getElementById('todo-list');
@@ -172,7 +172,7 @@ function initAssigneeUI() {
     });
 }
 
-// --- カレンダー機能（変更なし） ---
+// --- カレンダー機能（1日のみの予定を許可するよう修正） ---
 function initCalendar(uid) {
     const calendarEl = document.getElementById('calendar');
     calendar = new FullCalendar.Calendar(calendarEl, {
@@ -250,20 +250,34 @@ function initCalendar(uid) {
         const startInput = document.getElementById('event-start-date').value;
         const endInput = document.getElementById('event-end-date').value;
         
+        // 【修正1】: バリデーションを修正。開始日と終了日が入力されているか、開始日が終了日よりも前または同じであるかをチェック。
+        if (title.trim() === '' || !startInput || !endInput) {
+            alert('タイトルと日付を入力してください。');
+            return;
+        }
+
+        if (startInput > endInput) {
+            alert('開始日は終了日よりも後の日付に設定できません。');
+            return;
+        }
+        
+        // 【修正2】: FullCalendarの仕様（終了日を含まない）に合わせて、終了日が開始日と同じ場合は、終了日を翌日に設定するロジックを再確認し、そのまま維持。
+
         const endDate = new Date(endInput);
+        // 終了日の日付オブジェクトを作成し、FullCalendarの仕様に合わせて1日加算
         endDate.setDate(endDate.getDate() + 1);
         const endDay = endDate.toISOString().split('T')[0];
 
-        if (title.trim() === '' || !startInput || !endInput || startInput >= endInput) {
-            alert('入力内容を確認してください。');
-            return;
-        }
+        // FullCalendarの仕様により、開始日と終了日が同じ日であっても
+        // (例: 2025-09-26 to 2025-09-26)
+        // データベースには終了日として翌日 (2025-09-27) が保存され、
+        // カレンダー上では正しく1日のみの予定として表示されます。
         
         await db.collection(`users/${uid}/events`).add({
             title: title,
             assignee: finalAssignee,
             start: startInput, 
-            end: endDay,
+            end: endDay, // 終了日（FullCalendarの仕様に合わせて翌日）を保存
             allDay: true
         });
         
