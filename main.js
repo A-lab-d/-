@@ -6,9 +6,9 @@ let calendar;
 
 // ステータスとソート順の対応を定義
 const STATUS_ORDER_MAP = {
-    '実行中': 1, // 最優先
+    '実行中': 1,
     '検討中': 2,
-    '達成': 3     // 最低優先
+    '達成': 3
 };
 const INITIAL_STATUS = '検討中';
 
@@ -20,7 +20,6 @@ function initApp() {
         return;
     }
     
-    // 不要なカスタム時間生成ロジックを削除したため、これで正常に動作する
     initTodoList(user.uid);
     initCalendar(user.uid);
 
@@ -91,7 +90,7 @@ function initTodoList(uid) {
     });
 }
 
-// --- カレンダー機能 ---
+// --- カレンダー機能（日付のみに修正） ---
 function initCalendar(uid) {
     const calendarEl = document.getElementById('calendar');
     calendar = new FullCalendar.Calendar(calendarEl, {
@@ -102,6 +101,8 @@ function initCalendar(uid) {
             center: 'title',
             right: 'dayGridMonth,timeGridWeek,timeGridDay'
         },
+        // 【修正】: 全日イベント（時刻なし）として扱う
+        allDay: true,
         editable: true,
         selectable: true,
         eventClick: async (info) => {
@@ -119,8 +120,10 @@ function initCalendar(uid) {
                     events.push({
                         id: docSnap.id,
                         title: data.title,
-                        start: data.start.toDate(),
-                        end: data.end.toDate()
+                        // 【修正】: toDate()ではなく、Firestoreから取得した日付文字列を直接使用
+                        start: data.start, 
+                        end: data.end,
+                        allDay: true // 全日イベントとして扱う
                     });
                 });
                 successCallback(events);
@@ -135,22 +138,26 @@ function initCalendar(uid) {
         e.preventDefault();
         const title = document.getElementById('event-title').value;
         
-        // datetime-local の IDに戻す
+        // 【修正】: 日付入力のIDを使用
         const startInput = document.getElementById('event-start-date').value;
-        const endInput = document.getElementById('event-end-date').value;
+        const endInput = document.getElementById('event-end-date').value; // 終了日は含まれない日として登録するため
+        
+        // 終了日はFullCalendarの仕様に合わせ、入力された日付の翌日を終了日とする
+        const endDate = new Date(endInput);
+        endDate.setDate(endDate.getDate() + 1); // 翌日に設定
+        const endDay = endDate.toISOString().split('T')[0]; // YYYY-MM-DD 形式に戻す
 
-        // datetime-local の値は ISO 8601 形式なので、そのまま Date に変換できる
-        const start = new Date(startInput);
-        const end = new Date(endInput);
-
-        if (title.trim() === '' || !startInput || !endInput || start >= end) {
+        if (title.trim() === '' || !startInput || !endInput || startInput >= endInput) {
             alert('入力内容を確認してください。');
             return;
         }
+        
         await db.collection(`users/${uid}/events`).add({
             title: title,
-            start: firebase.firestore.Timestamp.fromDate(start),
-            end: firebase.firestore.Timestamp.fromDate(end)
+            // 【修正】: YYYY-MM-DD形式の文字列をそのまま保存
+            start: startInput, 
+            end: endDay, // FullCalendarは終了日を含まない仕様
+            allDay: true
         });
         
         // フォームをクリア
