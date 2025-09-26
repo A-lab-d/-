@@ -1,9 +1,8 @@
 // firebase-config.js
 import { initializeApp } from "firebase/app";
-import { getAuth, onAuthStateChanged, signInAnonymously, signOut } from "firebase/auth";
+import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 
-// Your web app's Firebase configuration
 const firebaseConfig = {
     apiKey: "AIzaSyD9bHuHOHW6rrSUM5YBq3vLRuh6mAvKja0",
     authDomain: "arailabkarenda.firebaseapp.com",
@@ -15,20 +14,26 @@ const firebaseConfig = {
 };
 
 const app = initializeApp(firebaseConfig);
-
 export const auth = getAuth(app);
 export const db = getFirestore(app);
 
-// 許可されたメールアドレスのリストは不要になります
-// 代わりに、匿名ユーザーのUIDを使ってデータを管理します
+// 許可するメールアドレスのリストを定義
+const allowedEmails = ['user1@example.com', 'user2@example.com', 'your_email@example.com'];
 
+// 認証状態の監視
 onAuthStateChanged(auth, user => {
-    // ユーザーがログインしていない場合
-    if (!user) {
-        // 匿名ユーザーとしてログイン
-        signInAnonymously(auth);
+    const authContainer = document.getElementById('auth-container');
+    const appContainer = document.getElementById('app-container');
+
+    if (user) {
+        // ユーザーがログインしている場合
+        authContainer.style.display = 'none';
+        appContainer.style.display = 'block';
+        console.log("ユーザーがログインしました:", user.email);
     } else {
-        // ログイン状態であれば何もしない
-        console.log("ユーザーがログインしました:", user.uid);
+        // ユーザーがログアウトしている場合
+        authContainer.style.display = 'block';
+        appContainer.style.display = 'none';
+        console.log("ユーザーはログアウトしています。");
     }
 });
