@@ -64,7 +64,6 @@ main {
     background-color: #4285F4;
     border: none;
     padding: 2px 4px;
-    /* カーソルをポインターに変更し、クリック可能であることを示す */
     cursor: pointer; 
 }
 
@@ -204,7 +203,8 @@ main {
 }
 
 /* 担当者入力（個人）のGrid設定 */
-#individual-assignees.assignee-group {
+#individual-assignees.assignee-group,
+#detail-individual-assignees.assignee-group { /* 【修正】: モーダル内の担当者にも適用 */
     grid-template-columns: auto 1fr;
     gap: 5px 10px;
     padding: 10px;
@@ -213,7 +213,8 @@ main {
     margin-bottom: 15px;
 }
 
-#individual-assignees.assignee-group input[type="text"] {
+#individual-assignees.assignee-group input[type="text"],
+#detail-individual-assignees.assignee-group input[type="text"] { /* 【修正】: モーダル内の担当者にも適用 */
     width: 100%;
     max-width: none;
     margin-bottom: 0;
@@ -221,7 +222,7 @@ main {
 
 
 /* --- 日付入力のGrid設定 --- */
-.date-group {
+.date-group, #detail-dates-edit { /* 【修正】: モーダル内の期間編集にも適用 */
     display: grid;
     grid-template-columns: auto 1fr auto 1fr; 
     gap: 10px;
@@ -234,22 +235,21 @@ main {
     grid-template-columns: auto 1fr; 
 }
 
-#single-date-input input[type="date"] {
+#single-date-input input[type="date"],
+#range-date-input.date-group input[type="date"],
+#detail-dates-edit input[type="date"] { /* 【修正】: モーダル内の期間編集にも適用 */
     max-width: 200px;
 }
 
-#range-date-input.date-group input[type="date"] {
-    max-width: 200px;
-}
-
-.date-group input[type="date"] {
+.date-group input[type="date"],
+#detail-dates-edit input[type="date"] { /* 【修正】: モーダル内の期間編集にも適用 */
     width: auto; 
     padding: 8px;
     box-sizing: border-box;
     margin-bottom: 0;
 }
 
-.date-group label {
+.date-group label, #detail-dates-edit label { /* 【修正】: モーダル内の期間編集にも適用 */
     white-space: nowrap;
     font-weight: bold;
     font-size: 0.9em;
@@ -309,7 +309,7 @@ main {
     margin-bottom: 10px;
 }
 
-/* 期間表示用 */
+/* 期間表示用（今回は編集フィールドで置き換えましたが、スタイルは残しておきます） */
 #detail-dates span {
     font-weight: normal;
     font-size: 1em;
@@ -338,15 +338,6 @@ main {
 #detail-assignee-edit .assignee-choice-group {
     border-bottom: none;
     margin-bottom: 5px;
-}
-
-#detail-individual-assignees.assignee-group {
-    grid-template-columns: auto 1fr;
-    gap: 5px 10px;
-    padding: 5px;
-    margin-top: 5px;
-    margin-bottom: 15px;
-    border: none; 
 }
 
 
@@ -394,7 +385,8 @@ main {
     /* 日付入力グループと担当者入力グループを縦並びに戻す */
     .date-group, 
     #individual-assignees.assignee-group,
-    #detail-individual-assignees.assignee-group {
+    #detail-individual-assignees.assignee-group,
+    #detail-dates-edit { /* 【修正】: モーダルの期間編集も縦並びに */
         grid-template-columns: 1fr;
         gap: 5px;
     }
@@ -403,7 +395,8 @@ main {
         margin-top: 5px;
     }
     
-    .date-group input[type="date"] {
+    .date-group input[type="date"],
+    #detail-dates-edit input[type="date"] { /* 【修正】: モーダルの期間編集も幅いっぱいに */
         max-width: none;
     }
     
