@@ -191,7 +191,7 @@ function initDateInputUI() {
     document.getElementById('event-end-date').removeAttribute('required');
 }
 
-// --- カレンダー機能（ロジック大幅修正） ---
+// --- カレンダー機能 ---
 function initCalendar(uid) {
     const calendarEl = document.getElementById('calendar');
     calendar = new FullCalendar.Calendar(calendarEl, {
@@ -205,7 +205,6 @@ function initCalendar(uid) {
         editable: true,
         selectable: true,
         
-        // 【修正】eventClick: 削除確認から詳細表示に変更
         eventClick: async (info) => {
             showEventDetail(uid, info.event);
         },
@@ -245,7 +244,7 @@ function initCalendar(uid) {
     eventForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         const title = document.getElementById('event-title').value;
-        const description = document.getElementById('event-description').value; // 【追加】内容を取得
+        const description = document.getElementById('event-description').value;
         const assigneeType = document.querySelector('input[name="assigneeType"]:checked').value;
         const dateType = document.querySelector('input[name="dateType"]:checked').value;
         
@@ -310,7 +309,7 @@ function initCalendar(uid) {
         
         await db.collection(`users/${uid}/events`).add({
             title: title,
-            description: description, // 【追加】内容を保存
+            description: description,
             assignee: finalAssignee,
             start: startDate, 
             end: endDate,
@@ -319,7 +318,7 @@ function initCalendar(uid) {
         
         // フォームをクリア
         document.getElementById('event-title').value = '';
-        document.getElementById('event-description').value = ''; // 【追加】内容フィールドをクリア
+        document.getElementById('event-description').value = '';
         document.getElementById('event-date').value = '';
         document.getElementById('event-start-date').value = '';
         document.getElementById('event-end-date').value = '';
@@ -341,7 +340,7 @@ function initCalendar(uid) {
     });
 }
 
-// --- 【新規追加】イベント詳細表示/編集関数 ---
+// --- イベント詳細表示/編集関数 ---
 function showEventDetail(uid, event) {
     const modal = document.getElementById('event-detail-modal');
     const closeButton = modal.querySelector('.close-button');
@@ -350,6 +349,10 @@ function showEventDetail(uid, event) {
     const assigneesDiv = document.getElementById('detail-individual-assignees');
     const assigneeRadios = document.getElementsByName('detailAssigneeType');
     
+    // 期間編集用の要素
+    const detailStartDateInput = document.getElementById('detail-start-date');
+    const detailEndDateInput = document.getElementById('detail-end-date');
+
     // 担当者タイプ変更イベント（UI表示切替）を先に設定
     assigneeRadios.forEach(radio => {
         radio.onchange = (e) => {
@@ -377,21 +380,15 @@ function showEventDetail(uid, event) {
         document.getElementById('detail-title').value = data.title;
         document.getElementById('detail-description').value = data.description || '';
 
-        // 日付範囲を設定 (FullCalendarはendを+1日しているので、表示用に-1日する)
+        // 【修正】: 期間入力フィールドに値を設定
+        // FullCalendarはendを+1日しているので、編集フィールドには-1日した日付を設定する
         const displayEndDate = new Date(data.end);
         displayEndDate.setDate(displayEndDate.getDate() - 1);
-        const startString = data.start;
-        const endString = displayEndDate.toISOString().split('T')[0];
         
-        let dateRangeText;
-        if (startString === endString) {
-            dateRangeText = `${startString} (単日)`;
-        } else {
-            dateRangeText = `${startString} から ${endString}`;
-        }
-        document.getElementById('detail-date-range').textContent = dateRangeText;
-
-
+        detailStartDateInput.value = data.start;
+        // 日付形式 YYYY-MM-DD に整形して設定
+        detailEndDateInput.value = displayEndDate.toISOString().split('T')[0]; 
+        
         // 担当者情報を設定
         const assigneeTypeAll = document.getElementById('detail-assignee-all');
         const assigneeTypeIndividual = document.getElementById('detail-assignee-individual');
@@ -408,7 +405,6 @@ function showEventDetail(uid, event) {
             assigneeTypeIndividual.checked = true;
             assigneesDiv.style.display = 'grid';
             
-            // 担当者名をフィールドに設定
             if (Array.isArray(data.assignee)) {
                 data.assignee.forEach((name, index) => {
                     if (index < 4) {
@@ -426,7 +422,7 @@ function showEventDetail(uid, event) {
     });
 
 
-    // --- モーダル内のイベントリスナー（毎回再設定しないよう、ここでは関数として定義して上書き） ---
+    // --- モーダル内のイベントリスナー ---
 
     // 閉じるボタン
     closeButton.onclick = () => {
@@ -450,11 +446,16 @@ function showEventDetail(uid, event) {
         }
     };
     
-    // 保存ボタン
+    // 【修正】: 保存ボタン
     saveButton.onclick = async () => {
         const id = document.getElementById('detail-event-id').value;
         const newTitle = document.getElementById('detail-title').value;
         const newDescription = document.getElementById('detail-description').value;
+        
+        // 【修正】: 新しい期間の値を取得
+        const newStartDate = detailStartDateInput.value;
+        const newEndDate = detailEndDateInput.value;
+        
         const newAssigneeType = document.querySelector('input[name="detailAssigneeType"]:checked').value;
         
         let newFinalAssignee;
@@ -477,15 +478,28 @@ function showEventDetail(uid, event) {
             newFinalAssignee = individualNames;
         }
         
-        if (newTitle.trim() === '') {
-            alert('タイトルは必須です。');
+        // 【修正】: バリデーションチェック
+        if (newTitle.trim() === '' || !newStartDate || !newEndDate) {
+            alert('タイトルと期間を入力してください。');
             return;
         }
+        if (newStartDate > newEndDate) {
+            alert('開始日は終了日よりも後の日付に設定できません。');
+            return;
+        }
+
+        // FullCalendarの仕様に合わせて終了日を翌日に設定
+        const saveEndDateObj = new Date(newEndDate);
+        saveEndDateObj.setDate(saveEndDateObj.getDate() + 1);
+        const saveEndDate = saveEndDateObj.toISOString().split('T')[0];
+
 
         await db.collection(`users/${uid}/events`).doc(id).update({
             title: newTitle,
             description: newDescription,
-            assignee: newFinalAssignee
+            assignee: newFinalAssignee,
+            start: newStartDate, // 【更新】
+            end: saveEndDate     // 【更新】
         });
         
         alert('予定が更新されました。');
